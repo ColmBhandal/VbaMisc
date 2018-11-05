@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Unignore directories
+!*/
+
+# Unignore meta files
+!.gitignore
+!README.md
+
+# Unignore files with these extensions
+!*.bas
+!*.cls
