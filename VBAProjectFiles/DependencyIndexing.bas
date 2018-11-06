@@ -54,7 +54,7 @@ Sub doRunMain(runObject As DependencyIndexRun)
         Call activateMetaSheet
         Call updateMetaSheet(runObject.ChunkFormulaCount, runObject.CurrentRow)
         runObject.resetChunk
-        ActiveSheet.UsedRange.Columns.AutoFit
+        ActiveSheet.usedRange.Columns.AutoFit
     Loop
 End Sub
 
@@ -359,7 +359,7 @@ Attribute ResetMetaSheet.VB_ProcData.VB_Invoke_Func = "s\n14"
     currentCell.Interior.Color = GREEN
     Call writeStepRight(currentCell, EXTERNAL_ONLY)
     Call resetMetaValues
-    ActiveSheet.UsedRange.Columns.AutoFit
+    ActiveSheet.usedRange.Columns.AutoFit
 End Sub
 
 'Writes the value to the cell and then steps the reference right to the next cell
@@ -376,7 +376,7 @@ End Function
 Private Function getColumnByHeader(header As String) As Integer
     Call activateMetaSheet
     Dim cell As Range
-    For Each cell In ActiveSheet.UsedRange.rows(1).Cells
+    For Each cell In ActiveSheet.usedRange.rows(1).Cells
         If cell.value = header Then
             getColumnByHeader = cell.Column
             Exit Function
@@ -412,9 +412,9 @@ Dim lCount As Long
     On Error Resume Next
         For Each ws In Worksheets
             Set rCheck = Nothing
-            Set rCheck = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+            Set rCheck = ws.usedRange.SpecialCells(xlCellTypeFormulas)
                 If Not rCheck Is Nothing Then lCount = _
-                    ws.UsedRange.SpecialCells(xlCellTypeFormulas).Cells.count + lCount
+                    ws.usedRange.SpecialCells(xlCellTypeFormulas).Cells.count + lCount
         Next ws
     On Error GoTo 0
     formulaCount = lCount

@@ -22,7 +22,7 @@ Private m_externalOnly As Boolean
 'If the row goes beyond the last row in the sheet, switches sheet
 Public Sub processRow()
     Dim formulasInRow As Long: formulasInRow = 0
-    Dim sheetRows As Range: Set sheetRows = m_currentSheet.UsedRange.rows
+    Dim sheetRows As Range: Set sheetRows = m_currentSheet.usedRange.rows
     If (m_currentRow > sheetRows.count) Then
         Call switchSheet
         Exit Sub
@@ -67,7 +67,7 @@ End Sub
 'Assumes prec is a range on a regular sheet
 Function getShadowRange(prec As Range) As Range
     Dim ws As Worksheet: Set ws = prec.Worksheet
-    Dim boundedRange As Range: Set boundedRange = Intersect(prec, ws.UsedRange)
+    Dim boundedRange As Range: Set boundedRange = Intersect(prec, ws.usedRange)
     Dim shadowSheet As Worksheet: Set shadowSheet = getBuddySheet(ws)
     shadowSheet.Activate
     Set getShadowRange = Range(boundedRange.Address)
