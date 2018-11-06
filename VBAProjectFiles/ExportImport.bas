@@ -62,9 +62,6 @@ Public Sub ExportModules()
             ''' Export the component to a text file.
             cmpComponent.Export szExportPath & szFileName
             Debug.Print "Exported " & szFileName
-            
-        ''' remove it from the project if you want
-        '''wkbSource.VBProject.VBComponents.Remove cmpComponent
         
         End If
    
