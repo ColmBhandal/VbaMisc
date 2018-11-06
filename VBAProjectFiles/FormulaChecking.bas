@@ -105,6 +105,35 @@ Sub highlightTrueDiffs(rowAbove As Range)
     'TODO
 End Sub
 
+Sub testExtractCellRefs()
+    MsgBox (ExtractCellRefs(ActiveCell))
+End Sub
+
+'Yields a comma separated string of references in the formula of the given range
+Function ExtractCellRefs(Rg As Range) As String
+    Dim xRetList As Object
+    Dim xRegEx As Object
+    Dim I As Long
+    Dim xRet As String
+    Application.Volatile
+    Set xRegEx = CreateObject("VBSCRIPT.REGEXP")
+    With xRegEx
+        .Pattern = "('?[a-zA-Z0-9\s\[\]\.]{1,99})?'?!?\$?[A-Z]{1,3}\$?[0-9]{1,7}(:\$?[A-Z]{1,3}\$?[0-9]{1,7})?"
+        .Global = True
+        .MultiLine = True
+        .IgnoreCase = False
+    End With
+    Set xRetList = xRegEx.Execute(Rg.formula)
+    If xRetList.count > 0 Then
+        For I = 0 To xRetList.count - 1
+            xRet = xRet & xRetList.Item(I) & ", "
+        Next
+        ExtractCellRefs = Left(xRet, Len(xRet) - 2)
+    Else
+        ExtractCellRefs = "No Matches"
+    End If
+End Function
+
 Function isRepeatFormula(formulaAbove As String, formulaBelow As String) As Boolean
     isRepeatFormula = formulaAbove = formulaBelow
 End Function
