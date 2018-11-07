@@ -1,15 +1,24 @@
 Attribute VB_Name = "FormulaChecking"
 Option Explicit
 
+Const DIFF_COLOUR_INDEX = 6
 Const COMPRESSED_FORMULA_SHEET = "CompressedFormulas"
+Const CHUNK_SIZE = 10
 
-'TODO: Master function = filter columns then rows. Make the time logging better.
+Sub compressFormulas()
+    Dim startTime As Double
+    startTime = Now
+    Debug.Print "***** Filtering unused columns *****"
+    Call FilterFormulaColumns
+    Debug.Print "***** Unused columns Filtered *****"
+    Debug.Print "***** Filtering repeat rows *****"
+    Call FilterRepeatRows
+    Debug.Print "***** Repeat rows filtered *****"
+    Debug.Print ("Time: " & Minute(Now - startTime) & ":" & Second(Now - startTime))
+End Sub
 
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
 Sub FilterFormulaColumns()
-Attribute FilterFormulaColumns.VB_ProcData.VB_Invoke_Func = "k\n14"
-    Dim startTime As Double
-    startTime = Now
     Dim selectedRange As Range
     Set selectedRange = Selection
     Call ResetOutput(COMPRESSED_FORMULA_SHEET)
@@ -49,7 +58,6 @@ Attribute FilterFormulaColumns.VB_ProcData.VB_Invoke_Func = "k\n14"
     Next
     Call BordersAroundUsedRange(outputSheet)
     outputSheet.Activate
-    Debug.Print ("Time: " & Minute(Now - startTime) & ":" & Second(Now - startTime))
 End Sub
 
 'Filters out repeat rows and highlights changes on rows with unique formulas
@@ -57,42 +65,51 @@ End Sub
 'This subroutine assumes the compressed formula sheet already exists with some formulas in it
 Sub FilterRepeatRows()
     Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet()
-    Dim row As Range
+    Dim rowNum As Integer
     Dim rowToDelete As Variant
     Dim rowsToDelete As New Collection
-    For Each row In outputSheet.usedRange.rows
-        Dim rowBelow As Range: Set rowBelow = row.Offset(1, 0)
-        If isRepeat(row, rowBelow) Then
-            Set rowToDelete = rowBelow
-            rowsToDelete.Add Item:=rowToDelete
+    'Skip the first row which is a header, and skip the last row which has no rows after it
+    For rowNum = 2 To outputSheet.usedRange.rows.count - 1
+        If doesBelowRepeat(outputSheet, rowNum) Then
+            rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum)
+        Else
+            Call highlightDiffsBelow(outputSheet, rowNum)
+            DoEvents
         End If
     Next
+    Dim counter As Integer: counter = 0
     For Each rowToDelete In rowsToDelete
+        counter = counter + 1
+        counter = counter Mod CHUNK_SIZE
+        If counter = 0 Then
+            Debug.Print "Deleted " & CHUNK_SIZE & " rows"
+            DoEvents
+        End If
         rowToDelete.Delete
-        'TODO: Maybe reduce the number of calls to DoEvents- use chunking: inner & outer loop & only do in outer
-        DoEvents
     Next
+    If counter <> 0 Then _
+        Debug.Print "Deleted " & counter & " rows"
 End Sub
 
-Sub testIsRepeat()
+Sub testDoesBelowRepeat()
     Dim rowNum As Integer: rowNum = ActiveCell.row
-    Call MsgBox("Does row below " & rowNum & " repeat it: " & isRepeat(ActiveCell.Worksheet, rowNum))
+    Call MsgBox("Does row below " & rowNum & " repeat it: " & doesBelowRepeat(ActiveCell.Worksheet, rowNum))
 End Sub
 
 'Does the row below repeat all the formulas from the row above?
 'Note: we ignore the leftmost column, which just contains indices
-Function isRepeat(ws As Worksheet, rowAbove As Integer) As Boolean
+Function doesBelowRepeat(ws As Worksheet, rowAbove As Integer) As Boolean
     Dim cellAbove As Range
     Dim row As Range
     Set row = getUsedRow(ws, rowAbove).Offset(0, 1)
     Set row = row.Resize(, row.Columns.count - 1)
     For Each cellAbove In row.Cells
-        If Not isRepeatFormula(cellAbove, cellAbove.Offset(1, 0)) Then
-            isRepeat = False
+        If Not doesBelowRepeatFormula(cellAbove, cellAbove.Offset(1, 0)) Then
+            doesBelowRepeat = False
             Exit Function
         End If
     Next
-    isRepeat = True
+    doesBelowRepeat = True
 End Function
 
 Function getUsedRow(ws As Worksheet, rowNum As Integer) As Range
@@ -101,17 +118,26 @@ Function getUsedRow(ws As Worksheet, rowNum As Integer) As Range
 End Function
 
 'Highlights the cells in the row below that differ from the row above by more than just autofill diffs
-Sub highlightTrueDiffs(rowAbove As Range)
-    'TODO
+Sub highlightDiffsBelow(ws As Worksheet, rowAbove As Integer)
+    Dim cellAbove As Range
+    Dim row As Range
+    Set row = getUsedRow(ws, rowAbove).Offset(0, 1)
+    Set row = row.Resize(, row.Columns.count - 1)
+    For Each cellAbove In row.Cells
+        Dim cellBelow As Range: Set cellBelow = cellAbove.Offset(1, 0)
+        If Not doesBelowRepeatFormula(cellAbove, cellBelow) Then
+            cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
+        End If
+    Next
 End Sub
 
-Function isRepeatFormula(cellAbove As Range, cellBelow As Range) As Boolean
+Function doesBelowRepeatFormula(cellAbove As Range, cellBelow As Range) As Boolean
     Dim aboveRefs() As String, belowRefs() As String
     aboveRefs = Split(ExtractCellRefs(cellAbove), ",")
     belowRefs = Split(ExtractCellRefs(cellBelow), ",")
     Dim lenAbove As Integer: lenAbove = ArrayLen(aboveRefs)
     If (lenAbove <> ArrayLen(belowRefs)) Then
-        isRepeatFormula = False
+        doesBelowRepeatFormula = False
         Exit Function
     End If
     Dim transformedBelowValue As String: transformedBelowValue = cellBelow.value
@@ -128,7 +154,7 @@ Function isRepeatFormula(cellAbove As Range, cellBelow As Range) As Boolean
         If (belowRng.row - aboveRng.row > 1) Or _
             (belowRng.row < aboveRng.row) Or _
             (aboveRng.Column <> belowRng.Column) Then
-            isRepeatFormula = False
+            doesBelowRepeatFormula = False
             Exit Function
         End If
         'Only replace 1 occurence, starting beyond the previous replacement
@@ -136,9 +162,8 @@ Function isRepeatFormula(cellAbove As Range, cellBelow As Range) As Boolean
             Replace(transformedBelowValue, belowRef, aboveRef, start, 1)
         'Shift our start index beyond the occurence we just replaced
         start = InStr(start, transformedBelowValue, aboveRef) + Len(aboveRef)
-        Debug.Print transformedBelowValue & " -- " & aboveRef & " -- " & start
     Next
-    isRepeatFormula = cellAbove.value = transformedBelowValue
+    doesBelowRepeatFormula = cellAbove.value = transformedBelowValue
 End Function
 
 Sub testExtractCellRefs()
