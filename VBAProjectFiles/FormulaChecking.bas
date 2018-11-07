@@ -74,7 +74,7 @@ Sub FilterRepeatRows()
         counter = counter + 1
         counter = counter Mod CHUNK_SIZE
         If counter = 0 Then
-            Debug.Print "Scanned " & CHUNK_SIZE & " rows"
+            Debug.Print Now & " Scanned " & CHUNK_SIZE & " rows"
             DoEvents
         End If
         If doesBelowRepeat(outputSheet, rowNum) Then
@@ -85,20 +85,20 @@ Sub FilterRepeatRows()
         End If
     Next
     If counter <> 0 Then _
-        Debug.Print "Scanned " & counter & " rows"
+        Debug.Print Now & "Scanned " & counter & " rows"
     Debug.Print "----- Scanning of rows complete -----"
     counter = 0
     For Each rowToDelete In rowsToDelete
         counter = counter + 1
         counter = counter Mod CHUNK_SIZE
         If counter = 0 Then
-            Debug.Print "Deleted " & CHUNK_SIZE & " rows"
+            Debug.Print Now & " Deleted " & CHUNK_SIZE & " rows"
             DoEvents
         End If
         rowToDelete.Delete
     Next
     If counter <> 0 Then _
-        Debug.Print "Deleted " & counter & " rows"
+        Debug.Print Now & " Deleted " & counter & " rows"
 End Sub
 
 Sub testDoesBelowRepeat()
