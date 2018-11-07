@@ -2,6 +2,7 @@ Attribute VB_Name = "FormulaChecking"
 Option Explicit
 
 Const DIFF_COLOUR_INDEX = 6
+Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMPRESSED_FORMULA_SHEET = "CompressedFormulas"
 Const CHUNK_SIZE = 10
 
@@ -136,7 +137,11 @@ Sub highlightDiffsBelow(ws As Worksheet, rowAbove As Integer)
     For Each cellAbove In row.Cells
         Dim cellBelow As Range: Set cellBelow = cellAbove.Offset(1, 0)
         If Not doesBelowRepeatFormula(cellAbove, cellBelow) Then
-            cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
+            If IsEmpty(cellBelow) Then
+                cellBelow.Interior.ColorIndex = BLANK_DIFF_COLOUR_INDEX
+            Else
+                cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
+            End If
         End If
     Next
 End Sub
