@@ -60,7 +60,7 @@ Sub FilterFormulaColumns(selectedRange As Range)
     For currRow = 2 To lastRow
         outputSheet.Cells(currRow, 1) = currRow - 2 + selectedRange.row
     Next
-    Call BordersAroundUsedRange(outputSheet)
+    Call FormatUsedRange(outputSheet)
     outputSheet.Activate
 End Sub
 
