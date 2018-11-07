@@ -87,7 +87,7 @@ Function isRepeat(ws As Worksheet, rowAbove As Integer) As Boolean
     Set row = getUsedRow(ws, rowAbove).Offset(0, 1)
     Set row = row.Resize(, row.Columns.count - 1)
     For Each cellAbove In row.Cells
-        If Not isRepeatFormula(cellAbove.value, cellAbove.Offset(1, 0).value) Then
+        If Not isRepeatFormula(cellAbove, cellAbove.Offset(1, 0)) Then
             isRepeat = False
             Exit Function
         End If
@@ -105,6 +105,24 @@ Sub highlightTrueDiffs(rowAbove As Range)
     'TODO
 End Sub
 
+Function isRepeatFormula(cellAbove As Range, cellBelow As Range) As Boolean
+    Dim aboveRefs() As String, belowRefs() As String
+    aboveRefs = Split(ExtractCellRefs(cellAbove), ",")
+    belowRefs = Split(ExtractCellRefs(cellBelow), ",")
+    Dim lenAbove As Integer: lenAbove = ArrayLen(aboveRefs)
+    If (lenAbove <> ArrayLen(belowRefs)) Then
+        isRepeatFormula = False
+        Exit Function
+    End If
+    Dim transformedBelowValue As String: transformedBelowValue = cellBelow.value
+    'If we get to here then the lengths of the arrays match
+    Dim i As Integer
+    For i = 0 To lenAbove - 1
+        transformedBelowValue = Replace(transformedBelowValue, belowRefs(i), aboveRefs(i))
+    Next
+    isRepeatFormula = cellAbove.value = transformedBelowValue
+End Function
+
 Sub testExtractCellRefs()
     MsgBox (ExtractCellRefs(ActiveCell))
 End Sub
@@ -113,7 +131,7 @@ End Sub
 Function ExtractCellRefs(Rg As Range) As String
     Dim xRetList As Object
     Dim xRegEx As Object
-    Dim I As Long
+    Dim i As Long
     Dim xRet As String
     Application.Volatile
     Set xRegEx = CreateObject("VBSCRIPT.REGEXP")
@@ -125,17 +143,13 @@ Function ExtractCellRefs(Rg As Range) As String
     End With
     Set xRetList = xRegEx.Execute(Rg.formula)
     If xRetList.count > 0 Then
-        For I = 0 To xRetList.count - 1
-            xRet = xRet & xRetList.Item(I) & ", "
+        For i = 0 To xRetList.count - 1
+            xRet = xRet & xRetList.Item(i) & ","
         Next
-        ExtractCellRefs = Left(xRet, Len(xRet) - 2)
+        ExtractCellRefs = Left(xRet, Len(xRet) - 1)
     Else
         ExtractCellRefs = "No Matches"
     End If
-End Function
-
-Function isRepeatFormula(formulaAbove As String, formulaBelow As String) As Boolean
-    isRepeatFormula = formulaAbove = formulaBelow
 End Function
 
 Private Sub BordersAroundUsedRange(ws As Worksheet)
