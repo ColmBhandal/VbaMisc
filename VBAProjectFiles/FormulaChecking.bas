@@ -68,8 +68,15 @@ Sub FilterRepeatRows()
     Dim rowNum As Integer
     Dim rowToDelete As Variant
     Dim rowsToDelete As New Collection
+    Dim counter As Integer: counter = 0
     'Skip the first row which is a header, and skip the last row which has no rows after it
     For rowNum = 2 To outputSheet.usedRange.rows.count - 1
+        counter = counter + 1
+        counter = counter Mod CHUNK_SIZE
+        If counter = 0 Then
+            Debug.Print "Scanned " & CHUNK_SIZE & " rows"
+            DoEvents
+        End If
         If doesBelowRepeat(outputSheet, rowNum) Then
             rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum + 1)
         Else
@@ -77,7 +84,10 @@ Sub FilterRepeatRows()
             DoEvents
         End If
     Next
-    Dim counter As Integer: counter = 0
+    If counter <> 0 Then _
+        Debug.Print "Scanned " & counter & " rows"
+    Debug.Print "----- Scanning of rows complete -----"
+    counter = 0
     For Each rowToDelete In rowsToDelete
         counter = counter + 1
         counter = counter Mod CHUNK_SIZE
