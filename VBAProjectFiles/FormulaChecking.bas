@@ -2,29 +2,30 @@ Attribute VB_Name = "FormulaChecking"
 Option Explicit
 
 Const DIFF_COLOUR_INDEX = 6
-Const COMPRESSED_FORMULA_SHEET = "CompressedFormulas"
+Const COMP_FORM_PREFIX = "COMP_"
 Const CHUNK_SIZE = 10
 
 Sub compressFormulas()
+    Dim selectedRange As Range
+    Set selectedRange = Selection
     Dim startTime As Double
     startTime = Now
     Debug.Print "***** Filtering unused columns *****"
-    Call FilterFormulaColumns
+    Call FilterFormulaColumns(selectedRange)
     Debug.Print "***** Unused columns Filtered *****"
     Debug.Print "***** Filtering repeat rows *****"
-    Call FilterRepeatRows
+    Call FilterRepeatRows(selectedRange)
     Debug.Print "***** Repeat rows filtered *****"
-    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet()
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name)
     Call FormatUsedRange(outputSheet)
     Debug.Print ("Time: " & Minute(Now - startTime) & ":" & Second(Now - startTime))
 End Sub
 
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
-Sub FilterFormulaColumns()
-    Dim selectedRange As Range
-    Set selectedRange = Selection
-    Call ResetOutput(COMPRESSED_FORMULA_SHEET)
-    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet()
+Sub FilterFormulaColumns(selectedRange As Range)
+    Dim sheetName As String: sheetName = selectedRange.Worksheet.name
+    resetShadow (sheetName)
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(sheetName)
     Dim col As Range
     Dim currOutputCol As Integer
     currOutputCol = 2
@@ -61,11 +62,19 @@ Sub FilterFormulaColumns()
     outputSheet.Activate
 End Sub
 
+Private Sub resetShadow(sheetName As String)
+    Dim newSheetName As String
+    newSheetName = Left(COMP_FORM_PREFIX & sheetName, 31)
+    Application.StatusBar = "Resetting: " & newSheetName
+    ResetOutput (newSheetName)
+    Debug.Print "Reset Shadow sheet: " & newSheetName
+End Sub
+
 'Filters out repeat rows and highlights changes on rows with unique formulas
 'A repeat row is a row which does not add any new formulas relative to the row above it
 'This subroutine assumes the compressed formula sheet already exists with some formulas in it
-Sub FilterRepeatRows()
-    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet()
+Sub FilterRepeatRows(selectedRange As Range)
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name)
     Dim rowNum As Integer
     Dim rowToDelete As Variant
     Dim rowsToDelete As New Collection
@@ -207,8 +216,7 @@ Function ExtractCellRefs(Rg As Range) As String
 End Function
 
 Private Sub FormatUsedRange(ws As Worksheet)
-    Dim outputRange As Range
-    Set outputRange = ws.usedRange
+    Dim outputRange As Range: Set outputRange = ws.usedRange
     outputRange.Borders.LineStyle = xlContinuous
     ws.Cells.RowHeight = 15
     ws.Cells.ColumnWidth = 8.43
@@ -234,13 +242,14 @@ Private Function columnLetter(lngCol As Long) As String
     columnLetter = vArr(0)
 End Function
 
-Private Function getOutputSheet() As Worksheet
+Private Function getOutputSheet(sheetName As String) As Worksheet
     On Error GoTo problem_finding_output
-    Set getOutputSheet = ActiveWorkbook.Sheets(COMPRESSED_FORMULA_SHEET)
+    Set getOutputSheet = ActiveWorkbook.Sheets(Left(COMP_FORM_PREFIX & sheetName, 31))
     On Error GoTo 0
     Exit Function
 problem_finding_output:
-    Call MsgBox("There was a problem locating the sheet: " & COMPRESSED_FORMULA_SHEET, vbExclamation)
+    Call MsgBox("There was a problem locating the sheet: " & _
+        Left(COMP_FORM_PREFIX & sheetName, 31), vbExclamation)
 End Function
 
 'TODO: Get original relative address from a range in the compressed sheet- go to first cell in that column/row & take numbers written there
