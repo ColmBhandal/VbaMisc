@@ -2,6 +2,7 @@ Attribute VB_Name = "FormulaChecking"
 Option Explicit
 
 Const DIFF_COLOUR_INDEX = 6
+Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMP_FORM_PREFIX = "COMP_"
 Const CHUNK_SIZE = 10
 
@@ -57,8 +58,9 @@ Sub FilterFormulaColumns(selectedRange As Range)
     Dim lastRow As Integer: lastRow = outputSheet.usedRange.rows.count
     Dim currRow As Integer
     For currRow = 2 To lastRow
-        outputSheet.Cells(currRow, 1) = currRow - 1
+        outputSheet.Cells(currRow, 1) = currRow - 2 + selectedRange.row
     Next
+    Call BordersAroundUsedRange(outputSheet)
     outputSheet.Activate
 End Sub
 
@@ -78,8 +80,15 @@ Sub FilterRepeatRows(selectedRange As Range)
     Dim rowNum As Integer
     Dim rowToDelete As Variant
     Dim rowsToDelete As New Collection
+    Dim counter As Integer: counter = 0
     'Skip the first row which is a header, and skip the last row which has no rows after it
     For rowNum = 2 To outputSheet.usedRange.rows.count - 1
+        counter = counter + 1
+        counter = counter Mod CHUNK_SIZE
+        If counter = 0 Then
+            Debug.Print Now & " Scanned " & CHUNK_SIZE & " rows"
+            DoEvents
+        End If
         If doesBelowRepeat(outputSheet, rowNum) Then
             rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum + 1)
         Else
@@ -87,18 +96,21 @@ Sub FilterRepeatRows(selectedRange As Range)
             DoEvents
         End If
     Next
-    Dim counter As Integer: counter = 0
+    If counter <> 0 Then _
+        Debug.Print Now & "Scanned " & counter & " rows"
+    Debug.Print "----- Scanning of rows complete -----"
+    counter = 0
     For Each rowToDelete In rowsToDelete
         counter = counter + 1
         counter = counter Mod CHUNK_SIZE
         If counter = 0 Then
-            Debug.Print "Deleted " & CHUNK_SIZE & " rows"
+            Debug.Print Now & " Deleted " & CHUNK_SIZE & " rows"
             DoEvents
         End If
         rowToDelete.Delete
     Next
     If counter <> 0 Then _
-        Debug.Print "Deleted " & counter & " rows"
+        Debug.Print Now & " Deleted " & counter & " rows"
 End Sub
 
 Sub testDoesBelowRepeat()
@@ -136,7 +148,11 @@ Sub highlightDiffsBelow(ws As Worksheet, rowAbove As Integer)
     For Each cellAbove In row.Cells
         Dim cellBelow As Range: Set cellBelow = cellAbove.Offset(1, 0)
         If Not doesBelowRepeatFormula(cellAbove, cellBelow) Then
-            cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
+            If IsEmpty(cellBelow) Then
+                cellBelow.Interior.ColorIndex = BLANK_DIFF_COLOUR_INDEX
+            Else
+                cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
+            End If
         End If
     Next
 End Sub
@@ -251,6 +267,3 @@ problem_finding_output:
     Call MsgBox("There was a problem locating the sheet: " & _
         Left(COMP_FORM_PREFIX & sheetName, 31), vbExclamation)
 End Function
-
-'TODO: Get original relative address from a range in the compressed sheet- go to first cell in that column/row & take numbers written there
-'Test the above with a test sub that displays a message box with original cell's address for each compressed cell
