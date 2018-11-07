@@ -54,7 +54,7 @@ Sub FilterFormulaColumns()
     Dim lastRow As Integer: lastRow = outputSheet.usedRange.rows.count
     Dim currRow As Integer
     For currRow = 2 To lastRow
-        outputSheet.Cells(currRow, 1) = currRow - 1
+        outputSheet.Cells(currRow, 1) = currRow - 2 + selectedRange.row
     Next
     Call BordersAroundUsedRange(outputSheet)
     outputSheet.Activate
@@ -71,7 +71,7 @@ Sub FilterRepeatRows()
     'Skip the first row which is a header, and skip the last row which has no rows after it
     For rowNum = 2 To outputSheet.usedRange.rows.count - 1
         If doesBelowRepeat(outputSheet, rowNum) Then
-            rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum)
+            rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum + 1)
         Else
             Call highlightDiffsBelow(outputSheet, rowNum)
             DoEvents
@@ -148,8 +148,8 @@ Function doesBelowRepeatFormula(cellAbove As Range, cellBelow As Range) As Boole
     For i = 0 To lenAbove - 1
         Dim belowRef As String: belowRef = belowRefs(i)
         Dim aboveRef As String: aboveRef = aboveRefs(i)
-        Dim belowRng As Range: Set belowRng = Range(belowRef)
-        Dim aboveRng As Range: Set aboveRng = Range(aboveRef)
+        Dim belowRng As Range: Set belowRng = Range(getRelativeRef(belowRef))
+        Dim aboveRng As Range: Set aboveRng = Range(getRelativeRef(aboveRef))
         'The subtraction of row indices and comparison > 1 is to account for both absolute & relative
         If (belowRng.row - aboveRng.row > 1) Or _
             (belowRng.row < aboveRng.row) Or _
@@ -164,6 +164,16 @@ Function doesBelowRepeatFormula(cellAbove As Range, cellBelow As Range) As Boole
         start = InStr(start, transformedBelowValue, aboveRef) + Len(aboveRef)
     Next
     doesBelowRepeatFormula = cellAbove.value = transformedBelowValue
+End Function
+
+'Gives back only the relative part of the ref
+Function getRelativeRef(absoluteRef As String) As String
+    Dim splitStr() As String: splitStr = Split(absoluteRef, "!")
+    If ArrayLen(splitStr) < 2 Then
+        getRelativeRef = absoluteRef
+    Else
+        getRelativeRef = splitStr(1)
+    End If
 End Function
 
 Sub testExtractCellRefs()
@@ -199,7 +209,8 @@ Private Sub BordersAroundUsedRange(ws As Worksheet)
     Dim outputRange As Range
     Set outputRange = ws.usedRange
     outputRange.Borders.LineStyle = xlContinuous
-    outputRange.Columns.AutoFit
+    ws.Cells.RowHeight = 15
+    ws.Cells.ColumnWidth = 8.43
 End Sub
 
 'True if the rng has at least one formula, False otherwise
