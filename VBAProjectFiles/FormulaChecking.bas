@@ -2,7 +2,6 @@ Attribute VB_Name = "FormulaChecking"
 Option Explicit
 
 Const DIFF_COLOUR_INDEX = 6
-Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMPRESSED_FORMULA_SHEET = "CompressedFormulas"
 Const CHUNK_SIZE = 10
 
@@ -15,6 +14,8 @@ Sub compressFormulas()
     Debug.Print "***** Filtering repeat rows *****"
     Call FilterRepeatRows
     Debug.Print "***** Repeat rows filtered *****"
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet()
+    Call FormatUsedRange(outputSheet)
     Debug.Print ("Time: " & Minute(Now - startTime) & ":" & Second(Now - startTime))
 End Sub
 
@@ -55,9 +56,8 @@ Sub FilterFormulaColumns()
     Dim lastRow As Integer: lastRow = outputSheet.usedRange.rows.count
     Dim currRow As Integer
     For currRow = 2 To lastRow
-        outputSheet.Cells(currRow, 1) = currRow - 2 + selectedRange.row
+        outputSheet.Cells(currRow, 1) = currRow - 1
     Next
-    Call BordersAroundUsedRange(outputSheet)
     outputSheet.Activate
 End Sub
 
@@ -69,15 +69,8 @@ Sub FilterRepeatRows()
     Dim rowNum As Integer
     Dim rowToDelete As Variant
     Dim rowsToDelete As New Collection
-    Dim counter As Integer: counter = 0
     'Skip the first row which is a header, and skip the last row which has no rows after it
     For rowNum = 2 To outputSheet.usedRange.rows.count - 1
-        counter = counter + 1
-        counter = counter Mod CHUNK_SIZE
-        If counter = 0 Then
-            Debug.Print Now & " Scanned " & CHUNK_SIZE & " rows"
-            DoEvents
-        End If
         If doesBelowRepeat(outputSheet, rowNum) Then
             rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum + 1)
         Else
@@ -85,21 +78,18 @@ Sub FilterRepeatRows()
             DoEvents
         End If
     Next
-    If counter <> 0 Then _
-        Debug.Print Now & "Scanned " & counter & " rows"
-    Debug.Print "----- Scanning of rows complete -----"
-    counter = 0
+    Dim counter As Integer: counter = 0
     For Each rowToDelete In rowsToDelete
         counter = counter + 1
         counter = counter Mod CHUNK_SIZE
         If counter = 0 Then
-            Debug.Print Now & " Deleted " & CHUNK_SIZE & " rows"
+            Debug.Print "Deleted " & CHUNK_SIZE & " rows"
             DoEvents
         End If
         rowToDelete.Delete
     Next
     If counter <> 0 Then _
-        Debug.Print Now & " Deleted " & counter & " rows"
+        Debug.Print "Deleted " & counter & " rows"
 End Sub
 
 Sub testDoesBelowRepeat()
@@ -137,11 +127,7 @@ Sub highlightDiffsBelow(ws As Worksheet, rowAbove As Integer)
     For Each cellAbove In row.Cells
         Dim cellBelow As Range: Set cellBelow = cellAbove.Offset(1, 0)
         If Not doesBelowRepeatFormula(cellAbove, cellBelow) Then
-            If IsEmpty(cellBelow) Then
-                cellBelow.Interior.ColorIndex = BLANK_DIFF_COLOUR_INDEX
-            Else
-                cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
-            End If
+            cellBelow.Interior.ColorIndex = DIFF_COLOUR_INDEX
         End If
     Next
 End Sub
@@ -220,12 +206,17 @@ Function ExtractCellRefs(Rg As Range) As String
     End If
 End Function
 
-Private Sub BordersAroundUsedRange(ws As Worksheet)
+Private Sub FormatUsedRange(ws As Worksheet)
     Dim outputRange As Range
     Set outputRange = ws.usedRange
     outputRange.Borders.LineStyle = xlContinuous
     ws.Cells.RowHeight = 15
     ws.Cells.ColumnWidth = 8.43
+    With ActiveWindow
+        .SplitColumn = 1
+        .SplitRow = 1
+        .FreezePanes = True
+    End With
 End Sub
 
 'True if the rng has at least one formula, False otherwise
