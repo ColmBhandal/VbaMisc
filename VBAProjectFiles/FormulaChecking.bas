@@ -117,8 +117,26 @@ Function isRepeatFormula(cellAbove As Range, cellBelow As Range) As Boolean
     Dim transformedBelowValue As String: transformedBelowValue = cellBelow.value
     'If we get to here then the lengths of the arrays match
     Dim i As Integer
+    'We need this as a placeholder to remember where to start our next replacement
+    Dim start As Integer: start = 1
     For i = 0 To lenAbove - 1
-        transformedBelowValue = Replace(transformedBelowValue, belowRefs(i), aboveRefs(i))
+        Dim belowRef As String: belowRef = belowRefs(i)
+        Dim aboveRef As String: aboveRef = aboveRefs(i)
+        Dim belowRng As Range: Set belowRng = Range(belowRef)
+        Dim aboveRng As Range: Set aboveRng = Range(aboveRef)
+        'The subtraction of row indices and comparison > 1 is to account for both absolute & relative
+        If (belowRng.row - aboveRng.row > 1) Or _
+            (belowRng.row < aboveRng.row) Or _
+            (aboveRng.Column <> belowRng.Column) Then
+            isRepeatFormula = False
+            Exit Function
+        End If
+        'Only replace 1 occurence, starting beyond the previous replacement
+        transformedBelowValue = Left(transformedBelowValue, start - 1) & _
+            Replace(transformedBelowValue, belowRef, aboveRef, start, 1)
+        'Shift our start index beyond the occurence we just replaced
+        start = InStr(start, transformedBelowValue, aboveRef) + Len(aboveRef)
+        Debug.Print transformedBelowValue & " -- " & aboveRef & " -- " & start
     Next
     isRepeatFormula = cellAbove.value = transformedBelowValue
 End Function
@@ -148,7 +166,7 @@ Function ExtractCellRefs(Rg As Range) As String
         Next
         ExtractCellRefs = Left(xRet, Len(xRet) - 1)
     Else
-        ExtractCellRefs = "No Matches"
+        ExtractCellRefs = ""
     End If
 End Function
 
