@@ -60,6 +60,44 @@ Sub stripNonDiffs(outputSheet As Worksheet)
     Next
     If counter <> 0 Then _
         Debug.Print Now & " Stripped " & counter & " cells"
+    Call removeBlankRows(outputSheet)
+    Call removeBlankColumns(outputSheet)
+End Sub
+
+Sub testRemoveBlankColumns()
+    Call removeBlankColumns(ActiveSheet)
+End Sub
+
+'Removes rows with no values in them in the given worksheet
+Private Sub removeBlankColumns(outputSheet As Worksheet)
+  Dim r As Range, cols As Long, i As Long
+  Set r = outputSheet.usedRange
+  cols = r.Columns.count
+  For i = cols To 1 Step (-1)
+    'A row with just a row number in the first column is still counted as blank, hence < 2
+    If WorksheetFunction.CountA(r.Columns(i)) < 2 Then
+        r.Columns(i).Delete
+        Debug.Print Now & " Deleted empty Column " & i
+    End If
+  Next
+End Sub
+
+Sub testRemoveBlankRows()
+    Call removeBlankRows(ActiveSheet)
+End Sub
+
+'Removes rows with no values in them in the given worksheet
+Private Sub removeBlankRows(outputSheet As Worksheet)
+  Dim r As Range, rows As Long, i As Long
+  Set r = outputSheet.usedRange
+  rows = r.rows.count
+  For i = rows To 1 Step (-1)
+    'A row with just a row number in the first column is still counted as blank, hence < 2
+    If WorksheetFunction.CountA(r.rows(i)) < 2 Then
+        r.rows(i).Delete
+        Debug.Print Now & " Deleted empty Row " & i
+    End If
+  Next
 End Sub
 
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
