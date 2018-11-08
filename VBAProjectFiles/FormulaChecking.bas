@@ -127,7 +127,7 @@ Sub FilterRepeatRows(selectedRange As Range)
         End If
     Next
     If counter <> 0 Then _
-        Debug.Print Now & "Scanned " & counter & " rows"
+        Debug.Print Now & " Scanned " & counter & " rows"
     Debug.Print "----- Scanning of rows complete -----"
     counter = 0
     For Each rowToDelete In rowsToDelete
