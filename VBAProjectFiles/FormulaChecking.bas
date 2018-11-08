@@ -5,6 +5,7 @@ Const DIFF_COLOUR_INDEX = 6
 Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMP_FORM_PREFIX = "COMP_"
 Const CHUNK_SIZE = 10
+Const STRIP_CHUNK_SIZE = 8000
 
 Sub compressToDiffsOnly()
     compressFormulasAux (True)
@@ -44,12 +45,21 @@ End Sub
 Sub stripNonDiffs(outputSheet As Worksheet)
     Dim cell As Range
     'Offset is so we don't clear the row/column info
+    Dim counter As Integer: counter = 0
     For Each cell In outputSheet.usedRange.Offset(1, 1).Cells
+        counter = counter + 1
+        counter = counter Mod STRIP_CHUNK_SIZE
+        If counter = 0 Then
+            Debug.Print Now & " Stripped " & STRIP_CHUNK_SIZE & " cells"
+            DoEvents
+        End If
         If cell.Interior.ColorIndex <> DIFF_COLOUR_INDEX And _
             cell.Interior.ColorIndex <> BLANK_DIFF_COLOUR_INDEX Then
             cell.Clear
         End If
     Next
+    If counter <> 0 Then _
+        Debug.Print Now & " Stripped " & counter & " cells"
 End Sub
 
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
