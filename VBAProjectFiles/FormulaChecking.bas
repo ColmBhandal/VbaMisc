@@ -6,7 +6,16 @@ Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMP_FORM_PREFIX = "COMP_"
 Const CHUNK_SIZE = 10
 
+Sub compressToDiffsOnly()
+    compressFormulasAux (True)
+End Sub
+
 Sub compressFormulas()
+    compressFormulasAux (False)
+End Sub
+
+'diffsOnly = True means we only want to see formulas that differ from the row above
+Sub compressFormulasAux(diffsOnly As Boolean)
     Dim selectedRange As Range
     Set selectedRange = Selection
     Dim startTime As Double
@@ -19,7 +28,28 @@ Sub compressFormulas()
     Debug.Print "***** Repeat rows filtered *****"
     Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name)
     Call FormatUsedRange(outputSheet)
+    If diffsOnly Then
+        Debug.Print "Stripping non diffs from " & outputSheet.name
+        Call stripNonDiffs(outputSheet)
+    End If
     Debug.Print ("Time: " & Minute(Now - startTime) & ":" & Second(Now - startTime))
+End Sub
+
+Sub testStripNonDiffs()
+    Call stripNonDiffs(ActiveSheet)
+End Sub
+
+'Assuming the formulas on the outputSheet have been compressed & colour coded,
+'This function deletes the contents of all cells that are not diffs
+Sub stripNonDiffs(outputSheet As Worksheet)
+    Dim cell As Range
+    'Offset is so we don't clear the row/column info
+    For Each cell In outputSheet.usedRange.Offset(1, 1).Cells
+        If cell.Interior.ColorIndex <> DIFF_COLOUR_INDEX And _
+            cell.Interior.ColorIndex <> BLANK_DIFF_COLOUR_INDEX Then
+            cell.Clear
+        End If
+    Next
 End Sub
 
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
