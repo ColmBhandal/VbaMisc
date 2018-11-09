@@ -11,7 +11,21 @@ Const STRIP_CHUNK_SIZE = 8000
 'Creates a super-compressed view of the diffs only in a list on a separate shadow sheet
 'Must be called with existing shadow sheet as the active sheet
 Sub superCompress()
-    Call resetShadow(ActiveSheet.name, SUPER_COMP_FORM_PREFIX)
+    Dim shadowSheet As Worksheet: Set shadowSheet = ActiveSheet
+    Dim sheetName As String: sheetName = shadowSheet.name
+    If InStr(sheetName, COMP_FORM_PREFIX) <> 1 Then
+        MsgBox ("You must run this from a shadow sheet starting with " & COMP_FORM_PREFIX & vbCrLf _
+            & "Sheet name detected: " & sheetName)
+        Exit Sub
+    End If
+    Call resetShadow(sheetName, SUPER_COMP_FORM_PREFIX)
+    Dim outputSheet As Worksheet
+    Set outputSheet = getOutputSheet(shadowSheet.name, SUPER_COMP_FORM_PREFIX)
+    Dim cell As Range
+    For Each cell In shadowSheet.usedRange.Cells
+        outputSheet.Cells(cell.row, cell.Column) = cell
+    Next
+    outputSheet.Select
 End Sub
 
 Private Sub testGetOriginalCellAddr()
@@ -49,7 +63,7 @@ Sub compressFormulasAux(diffsOnly As Boolean)
     Debug.Print "***** Filtering repeat rows *****"
     Call FilterRepeatRows(selectedRange)
     Debug.Print "***** Repeat rows filtered *****"
-    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name)
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name, COMP_FORM_PREFIX)
     Call FormatUsedRange(outputSheet)
     If diffsOnly Then
         Debug.Print "Stripping non diffs from " & outputSheet.name
@@ -88,7 +102,7 @@ End Sub
 Sub FilterFormulaColumns(selectedRange As Range)
     Dim sheetName As String: sheetName = selectedRange.Worksheet.name
     Call resetShadow(sheetName, COMP_FORM_PREFIX)
-    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(sheetName)
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(sheetName, COMP_FORM_PREFIX)
     Dim col As Range
     Dim currOutputCol As Integer
     currOutputCol = 2
@@ -138,7 +152,7 @@ End Sub
 'A repeat row is a row which does not add any new formulas relative to the row above it
 'This subroutine assumes the compressed formula sheet already exists with some formulas in it
 Sub FilterRepeatRows(selectedRange As Range)
-    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name)
+    Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(selectedRange.Worksheet.name, COMP_FORM_PREFIX)
     Dim rowNum As Integer
     Dim rowToDelete As Variant
     Dim rowsToDelete As New Collection
@@ -320,12 +334,12 @@ Private Function columnLetter(lngCol As Long) As String
     columnLetter = vArr(0)
 End Function
 
-Private Function getOutputSheet(sheetName As String) As Worksheet
+Private Function getOutputSheet(sheetName As String, prefix As String) As Worksheet
     On Error GoTo problem_finding_output
-    Set getOutputSheet = ActiveWorkbook.Sheets(Left(COMP_FORM_PREFIX & sheetName, 31))
+    Set getOutputSheet = ActiveWorkbook.Sheets(Left(prefix & sheetName, 31))
     On Error GoTo 0
     Exit Function
 problem_finding_output:
     Call MsgBox("There was a problem locating the sheet: " & _
-        Left(COMP_FORM_PREFIX & sheetName, 31), vbExclamation)
+        Left(prefix & sheetName, 31), vbExclamation)
 End Function
