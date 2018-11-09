@@ -4,10 +4,15 @@ Option Explicit
 Const DIFF_COLOUR_INDEX = 6
 Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMP_FORM_PREFIX = "COMP_"
-Const SUPER_COMP_FORM_PREFIX = "COMP_"
+Const SUPER_COMP_FORM_PREFIX = "S"
 Const CHUNK_SIZE = 10
 Const STRIP_CHUNK_SIZE = 8000
 
+'Creates a super-compressed view of the diffs only in a list on a separate shadow sheet
+'Must be called with existing shadow sheet as the active sheet
+Sub superCompress()
+    Call resetShadow(ActiveSheet.name, SUPER_COMP_FORM_PREFIX)
+End Sub
 
 Private Sub testGetOriginalCellAddr()
     Call MsgBox(getOriginalCellAddr(ActiveCell, ActiveSheet))
@@ -82,7 +87,7 @@ End Sub
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
 Sub FilterFormulaColumns(selectedRange As Range)
     Dim sheetName As String: sheetName = selectedRange.Worksheet.name
-    resetShadow (sheetName)
+    Call resetShadow(sheetName, COMP_FORM_PREFIX)
     Dim outputSheet As Worksheet: Set outputSheet = getOutputSheet(sheetName)
     Dim col As Range
     Dim currOutputCol As Integer
@@ -121,9 +126,9 @@ Sub FilterFormulaColumns(selectedRange As Range)
     outputSheet.Activate
 End Sub
 
-Private Sub resetShadow(sheetName As String)
+Private Sub resetShadow(sheetName As String, prefixName As String)
     Dim newSheetName As String
-    newSheetName = Left(COMP_FORM_PREFIX & sheetName, 31)
+    newSheetName = Left(prefixName & sheetName, 31)
     Application.StatusBar = "Resetting: " & newSheetName
     ResetOutput (newSheetName)
     Debug.Print "Reset Shadow sheet: " & newSheetName
