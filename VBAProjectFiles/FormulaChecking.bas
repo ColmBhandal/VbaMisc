@@ -21,11 +21,27 @@ Sub superCompress()
     Call resetShadow(sheetName, SUPER_COMP_FORM_PREFIX)
     Dim outputSheet As Worksheet
     Set outputSheet = getOutputSheet(shadowSheet.name, SUPER_COMP_FORM_PREFIX)
+    outputSheet.Cells(1, 1) = "Cell"
+    outputSheet.Cells(1, 2) = "Formula Above"
+    outputSheet.Cells(1, 3) = "Formula in Cell"
     Dim cell As Range
+    Dim outputRow As Integer: outputRow = 2
     For Each cell In shadowSheet.usedRange.Cells
-        outputSheet.Cells(cell.row, cell.Column) = cell
+        If isHighlighted(cell) Then
+            outputSheet.Cells(outputRow, 1) = getOriginalCellAddr(cell, shadowSheet)
+            outputSheet.Cells(outputRow, 2) = cell.Offset(-1, 0).value
+            outputSheet.Cells(outputRow, 3) = cell.value
+            outputRow = outputRow + 1
+        End If
     Next
     outputSheet.Select
+    outputSheet.usedRange.Rows(1).Font.Bold = True
+    outputSheet.usedRange.Columns.AutoFit
+    With ActiveWindow
+        .SplitRow = 1
+        .SplitColumn = 1
+        .FreezePanes = True
+    End With
 End Sub
 
 Private Sub testGetOriginalCellAddr()
@@ -89,14 +105,22 @@ Sub stripNonDiffs(outputSheet As Worksheet)
             Debug.Print Now & " Stripped " & STRIP_CHUNK_SIZE & " cells"
             DoEvents
         End If
-        If cell.Interior.ColorIndex <> DIFF_COLOUR_INDEX And _
-            cell.Interior.ColorIndex <> BLANK_DIFF_COLOUR_INDEX Then
+        If Not isHighlighted(cell) Then
             cell.Clear
         End If
     Next
     If counter <> 0 Then _
         Debug.Print Now & " Stripped " & counter & " cells"
 End Sub
+
+Private Function isHighlighted(cell As Range) As Boolean
+    If cell.Interior.ColorIndex = DIFF_COLOUR_INDEX Or _
+    cell.Interior.ColorIndex = BLANK_DIFF_COLOUR_INDEX Then
+        isHighlighted = True
+    Else
+        isHighlighted = False
+    End If
+End Function
 
 'Compresses the selected range by writing only its formula columns to another sheet and skipping non-formula columns
 Sub FilterFormulaColumns(selectedRange As Range)
@@ -131,7 +155,7 @@ Sub FilterFormulaColumns(selectedRange As Range)
             currOutputCol = currOutputCol + 1
         End If
     Next col
-    Dim lastRow As Integer: lastRow = outputSheet.usedRange.rows.count
+    Dim lastRow As Integer: lastRow = outputSheet.usedRange.Rows.count
     Dim currRow As Integer
     For currRow = 2 To lastRow
         outputSheet.Cells(currRow, 1) = currRow - 2 + selectedRange.row
@@ -158,7 +182,7 @@ Sub FilterRepeatRows(selectedRange As Range)
     Dim rowsToDelete As New Collection
     Dim counter As Integer: counter = 0
     'Skip the first row which is a header, and skip the last row which has no rows after it
-    For rowNum = 2 To outputSheet.usedRange.rows.count - 1
+    For rowNum = 2 To outputSheet.usedRange.Rows.count - 1
         counter = counter + 1
         counter = counter Mod CHUNK_SIZE
         If counter = 0 Then
@@ -166,7 +190,7 @@ Sub FilterRepeatRows(selectedRange As Range)
             DoEvents
         End If
         If doesBelowRepeat(outputSheet, rowNum) Then
-            rowsToDelete.Add Item:=outputSheet.usedRange.rows(rowNum + 1)
+            rowsToDelete.Add Item:=outputSheet.usedRange.Rows(rowNum + 1)
         Else
             Call highlightDiffsBelow(outputSheet, rowNum)
             DoEvents
@@ -212,7 +236,7 @@ End Function
 
 Function getUsedRow(ws As Worksheet, rowNum As Integer) As Range
     Dim usedRange As Range: Set usedRange = ws.usedRange
-    Set getUsedRow = usedRange.rows(rowNum)
+    Set getUsedRow = usedRange.Rows(rowNum)
 End Function
 
 'Highlights the cells in the row below that differ from the row above by more than just autofill diffs
