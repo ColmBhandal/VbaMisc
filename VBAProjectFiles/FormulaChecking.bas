@@ -4,8 +4,25 @@ Option Explicit
 Const DIFF_COLOUR_INDEX = 6
 Const BLANK_DIFF_COLOUR_INDEX = 4
 Const COMP_FORM_PREFIX = "COMP_"
+Const SUPER_COMP_FORM_PREFIX = "COMP_"
 Const CHUNK_SIZE = 10
 Const STRIP_CHUNK_SIZE = 8000
+
+
+Private Sub testGetOriginalCellRef()
+    Call MsgBox(getOriginalCellRef(ActiveCell, ActiveSheet))
+End Sub
+
+'Assuming the cell is in our compressed formulas shadow sheet,
+'what was the cell's relative address in the original sheet?
+Private Function getOriginalCellRef(cell As Range, shadowSheet As Worksheet) As String
+    Dim shadowRow As Integer, shadowCol As Integer
+    shadowRow = cell.row: shadowCol = cell.Column
+    Dim originalRow As String, originalCol As String
+    originalRow = shadowSheet.Cells(shadowRow, 1)
+    originalCol = shadowSheet.Cells(1, shadowCol)
+    getOriginalCellRef = originalCol & originalRow
+End Function
 
 Sub compressToDiffsOnly()
     compressFormulasAux (True)
