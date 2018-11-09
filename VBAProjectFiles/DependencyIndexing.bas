@@ -376,7 +376,7 @@ End Function
 Private Function getColumnByHeader(header As String) As Integer
     Call activateMetaSheet
     Dim cell As Range
-    For Each cell In ActiveSheet.usedRange.rows(1).Cells
+    For Each cell In ActiveSheet.usedRange.Rows(1).Cells
         If cell.value = header Then
             getColumnByHeader = cell.Column
             Exit Function

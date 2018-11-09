@@ -22,7 +22,7 @@ Private m_externalOnly As Boolean
 'If the row goes beyond the last row in the sheet, switches sheet
 Public Sub processRow()
     Dim formulasInRow As Long: formulasInRow = 0
-    Dim sheetRows As Range: Set sheetRows = m_currentSheet.usedRange.rows
+    Dim sheetRows As Range: Set sheetRows = m_currentSheet.usedRange.Rows
     If (m_currentRow > sheetRows.count) Then
         Call switchSheet
         Exit Sub
