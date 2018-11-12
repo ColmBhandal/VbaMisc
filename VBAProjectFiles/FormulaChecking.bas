@@ -24,15 +24,17 @@ Sub superCompress()
     outputSheet.Cells(1, 1) = "Cell"
     outputSheet.Cells(1, 2) = "Formula Above"
     outputSheet.Cells(1, 3) = "Formula in Cell"
-    Dim cell As Range
+    Dim column As Range, cell As Range
     Dim outputRow As Integer: outputRow = 2
-    For Each cell In shadowSheet.usedRange.Cells
-        If isHighlighted(cell) Then
-            outputSheet.Cells(outputRow, 1) = getOriginalCellAddr(cell, shadowSheet)
-            outputSheet.Cells(outputRow, 2) = cell.Offset(-1, 0).value
-            outputSheet.Cells(outputRow, 3) = cell.value
-            outputRow = outputRow + 1
-        End If
+    For Each column In shadowSheet.usedRange.Columns
+        For Each cell In column.Cells
+            If isHighlighted(cell) Then
+                outputSheet.Cells(outputRow, 1) = getOriginalCellAddr(cell, shadowSheet)
+                outputSheet.Cells(outputRow, 2) = cell.Offset(-1, 0).value
+                outputSheet.Cells(outputRow, 3) = cell.value
+                outputRow = outputRow + 1
+            End If
+        Next
     Next
     outputSheet.Select
     outputSheet.usedRange.Rows(1).Font.Bold = True
@@ -52,7 +54,7 @@ End Sub
 'what was the cell's relative address in the original sheet?
 Private Function getOriginalCellAddr(cell As Range, shadowSheet As Worksheet) As String
     Dim shadowRow As Integer, shadowCol As Integer
-    shadowRow = cell.row: shadowCol = cell.Column
+    shadowRow = cell.row: shadowCol = cell.column
     Dim originalRow As String, originalCol As String
     originalRow = shadowSheet.Cells(shadowRow, 1)
     originalCol = shadowSheet.Cells(1, shadowCol)
@@ -133,7 +135,7 @@ Sub FilterFormulaColumns(selectedRange As Range)
     For Each col In selectedRange.Columns
         If hasSomeFormulas(col) Then
             Dim colLetter As String
-            colLetter = columnLetter(col.Column)
+            colLetter = columnLetter(col.column)
             outputSheet.Cells(1, currOutputCol) = colLetter
             Dim cell As Range
             Dim outputRowIndex As Integer
@@ -279,7 +281,7 @@ Function doesBelowRepeatFormula(cellAbove As Range, cellBelow As Range) As Boole
         'The subtraction of row indices and comparison > 1 is to account for both absolute & relative
         If (belowRng.row - aboveRng.row > 1) Or _
             (belowRng.row < aboveRng.row) Or _
-            (aboveRng.Column <> belowRng.Column) Then
+            (aboveRng.column <> belowRng.column) Then
             doesBelowRepeatFormula = False
             Exit Function
         End If
