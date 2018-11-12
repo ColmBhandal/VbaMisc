@@ -378,7 +378,7 @@ Private Function getColumnByHeader(header As String) As Integer
     Dim cell As Range
     For Each cell In ActiveSheet.usedRange.Rows(1).Cells
         If cell.value = header Then
-            getColumnByHeader = cell.Column
+            getColumnByHeader = cell.column
             Exit Function
         End If
     Next cell
