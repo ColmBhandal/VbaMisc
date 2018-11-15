@@ -285,5 +285,6 @@ End Function
 'Only modules on this list will get imported/exported
 'Add your modules to the whiteList variable, separated by commas
 Private Function whiteList() As String
-    whiteList = "Dependencies,DependencyIndexing,DependencyIndexRun,ExportImport,FormulaChecking,GeneralPurpose"
+    whiteList = "Dependencies,DependencyIndexing,DependencyIndexRun,ExportImport,FormulaChecking,GeneralPurpose" _
+    & ",EventHandler"
 End Function
