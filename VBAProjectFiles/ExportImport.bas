@@ -11,21 +11,41 @@ End Sub
 
 'Loads the handlers defined in the EventHandler module to the ThisWorkbook module
 Public Sub loadHandlersToWB()
-    
-    
-    
-    MsgBox ("Stub: Please implement me!")
+    Dim eventHandlerModule As VBIDE.CodeModule
+    Set eventHandlerModule = getEventHandlerModule
+    Dim procNames As Collection: Set procNames = getAllProcNames(eventHandlerModule)
+    Dim name As Variant
+    For Each name In procNames
+        MsgBox (name)
+    Next
 End Sub
+
+'Collection of Strings of Sub names in that module
+Private Function getAllProcNames(module As VBIDE.CodeModule) As Collection
+    Dim lineNum As Integer
+    Dim procName As String
+    Dim coll As New Collection
+    Dim ProcKind As VBIDE.vbext_ProcKind
+    With module
+        lineNum = .CountOfDeclarationLines + 1
+        Do Until lineNum >= .CountOfLines
+            procName = .ProcOfLine(lineNum, ProcKind)
+            lineNum = .ProcStartLine(procName, ProcKind) + _
+                    .ProcCountLines(procName, ProcKind) + 1
+            coll.Add Item:=procName
+        Loop
+    End With
+    Set getAllProcNames = coll
+End Function
 
 Private Sub testMaybeAddSubToThisWorkbook()
     Call maybeAddSubToThisWorkbook("testSub", "", "")
     Call maybeAddSubToThisWorkbook("testSub", "", "")
 End Sub
 
-
 Private Sub maybeAddSubToThisWorkbook(subName As String, subParams As String, subCode As String)
     Dim oCodeMod As VBIDE.CodeModule
-    Set oCodeMod = getThiWorkbookModule
+    Set oCodeMod = getThisWorkbookModule
     If Not doesSubExist(subName, oCodeMod) Then
         oCodeMod.AddFromString "Private Sub " & subName & "(" & subParams & ")" _
         & vbCrLf & subCode & vbCrLf & "End Sub" & vbCrLf
@@ -36,17 +56,26 @@ End Sub
 
 Private Sub testDoesSubExist()
     Dim testVal As String: testVal = "Foo"
-    MsgBox (testVal & ": " & doesSubExist(testVal, getThiWorkbookModule()))
+    MsgBox (testVal & ": " & doesSubExist(testVal, getThisWorkbookModule()))
     testVal = "Workbook_Open"
-    MsgBox (testVal & ": " & doesSubExist(testVal, getThiWorkbookModule()))
+    MsgBox (testVal & ": " & doesSubExist(testVal, getThisWorkbookModule()))
 End Sub
 
-Private Function getThiWorkbookModule()
+Private Function getEventHandlerModule() As VBIDE.CodeModule
+    Set getEventHandlerModule = getModule("EventHandler")
+End Function
+
+Private Function getThisWorkbookModule() As VBIDE.CodeModule
+    Set getThisWorkbookModule = getModule(ThisWorkbook.CodeName)
+End Function
+
+'modName should be the name of a valid code module
+Private Function getModule(modName As String) As VBIDE.CodeModule
     Dim VBProj As VBIDE.VBProject
     Dim oComp As VBIDE.VBComponent
     Set VBProj = ThisWorkbook.VBProject
-    Set oComp = VBProj.VBComponents(ThisWorkbook.CodeName)
-    Set getThiWorkbookModule = oComp.CodeModule
+    Set oComp = VBProj.VBComponents(modName)
+    Set getModule = oComp.CodeModule
 End Function
 
 'Does a sub with this name already exist in the modyule
@@ -63,6 +92,7 @@ sub_does_not_exist:
 End Function
 
 Public Sub ExportModules()
+Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     Dim bExport As Boolean
     Dim wkbSource As Excel.Workbook
     Dim szSourceWorkbook As String
