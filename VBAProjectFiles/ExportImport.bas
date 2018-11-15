@@ -230,7 +230,7 @@ Private Function getThisModule() As VBIDE.VBComponent
             'Thisworkbook or worksheet module
             'We do nothing
         Else
-            Dim secondLine As String: secondLine = VBComp.CodeModule.Lines(2, 1)
+            Dim secondLine As String: secondLine = VBComp.CodeModule.lines(2, 1)
             If InStr(secondLine, IOEXP_UNIQUE_STRING) > 0 And VBComp.name <> IOEXP_UNIQUE_STRING Then
                 Set getThisModule = VBComp
                 Exit Function
