@@ -86,8 +86,30 @@ End Sub
 Private Sub maybeAddSpecialSubToThisWB(subName As String)
     Dim args As String: args = ""
     Select Case subName
+        Case "Workbook_BeforeClose":
+            args = "Cancel As Boolean"
         Case "Workbook_BeforeSave":
             args = "ByVal SaveAsUI As Boolean, Cancel As Boolean"
+        Case "Workbook_BeforePrint":
+            args = "Cancel As Boolean"
+        Case "Workbook_AfterSave":
+            args = "ByVal Success As Boolean"
+        Case "Workbook_SheetActivate":
+            args = "ByVal Sh As Object"
+        Case "Workbook_SheetBeforeDoubleClick":
+            args = "ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean"
+        Case "Workbook_SheetBeforeRightClick":
+            args = "ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean"
+        Case "Workbook_SheetChange":
+            args = "ByVal Sh As Object, ByVal Target As Range"
+        Case "Workbook_SheetCalculate":
+            args = "ByVal Sh As Object"
+        Case "Workbook_SheetSelectionChange":
+            args = "ByVal Sh As Object, ByVal Target As Range"
+        Case "Workbook_NewSheet":
+            args = "ByVal Sh As Object"
+        Case "Workbook_SheetFollowHyperlink":
+            args = "ByVal Sh As Object, ByVal Target As Hyperlink"
         Case Else:
             Dim errorDesc As String: errorDesc = "Unhandled WB sub name: " & subName
             Err.Raise Number:=513, Description:=errorDesc
