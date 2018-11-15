@@ -81,8 +81,8 @@ Sub initialChores(runObject As DependencyIndexRun)
     Dim currSheet As Worksheet: Set currSheet = getCurrentSheet()
     If currSheet Is Nothing Then
         Dim firstSheet As Worksheet: Set firstSheet = ThisWorkbook.Sheets(1)
-        getCellUnderHeader(CURR_SHEET).value = firstSheet.name
-        getCellUnderHeader(CURR_ROW).value = 1
+        getCellUnderHeader(CURR_SHEET).Value = firstSheet.name
+        getCellUnderHeader(CURR_ROW).Value = 1
         Set currSheet = firstSheet
     End If
     runObject.CurrentSheet = currSheet
@@ -96,15 +96,15 @@ Sub readInitialValues(runObject As DependencyIndexRun)
         Dim errorDesc As String: errorDesc = "Chunk Size and Run Size must be specified."
         Err.Raise Number:=513, Description:=errorDesc
     End If
-    runObject.m_chunkSize = chunkCell.value
-    runObject.m_runSize = runCell.value
+    runObject.m_chunkSize = chunkCell.Value
+    runObject.m_runSize = runCell.Value
     'Only read non-blank valus. Else leave them at object default.
     Dim rowCell As Range: Set rowCell = getCellUnderHeader(CURR_ROW)
     If Not IsEmpty(rowCell) Then _
-        runObject.CurrentRow = rowCell.value
+        runObject.CurrentRow = rowCell.Value
     Dim extOnlyCell As Range: Set extOnlyCell = getCellUnderHeader(EXTERNAL_ONLY)
     If Not IsEmpty(extOnlyCell) Then _
-        runObject.ExternalOnly = extOnlyCell.value
+        runObject.ExternalOnly = extOnlyCell.Value
 End Sub
 
 Sub testIsLastSheet()
@@ -133,16 +133,16 @@ End Function
 
 Sub updateMetaSheet(ChunkFormulaCount As Long, rowNum As Long)
     Dim formComplCell As Range: Set formComplCell = getCellUnderHeader(COMPLETED_FORMULAS)
-    Dim totalFormsComl As Double: totalFormsComl = formComplCell.value + ChunkFormulaCount
-    formComplCell.value = totalFormsComl
+    Dim totalFormsComl As Double: totalFormsComl = formComplCell.Value + ChunkFormulaCount
+    formComplCell.Value = totalFormsComl
     Dim totWbFormsCell As Range: Set totWbFormsCell = getCellUnderHeader(TOTAL_WB_FORMULAS)
-    Dim totalWbForms As Double: totalWbForms = totWbFormsCell.value
+    Dim totalWbForms As Double: totalWbForms = totWbFormsCell.Value
     Dim pcntComplete As Double: pcntComplete = (totalFormsComl / totWbFormsCell)
     Dim pcntComplCell As Range: Set pcntComplCell = getCellUnderHeader(PERCENT_COMPLETE)
-    pcntComplCell.value = pcntComplete
+    pcntComplCell.Value = pcntComplete
     pcntComplCell.NumberFormat = "0.00%"
     Dim currRowCell As Range: Set currRowCell = getCellUnderHeader(CURR_ROW)
-    currRowCell.value = rowNum
+    currRowCell.Value = rowNum
 End Sub
 
 
@@ -191,7 +191,7 @@ Function getCurrentSheet() As Worksheet
     Dim currentSheetRng As Range: Set currentSheetRng = getCellUnderHeader(CURR_SHEET)
     Dim currentSheetRngName As String
     If Not IsEmpty(currentSheetRng) Then
-        currentSheetRngName = currentSheetRng.value
+        currentSheetRngName = currentSheetRng.Value
         On Error GoTo current_sheet_error
         Set getCurrentSheet = Sheets(currentSheetRngName)
         Exit Function
@@ -226,7 +226,7 @@ Function getSheetsDone() As Collection
     Dim cell As Range
     Dim sheetName As String
     For Each cell In sheetsRng.Cells
-        sheetName = cell.value
+        sheetName = cell.Value
         If (InStr(1, sheetName, DEP_PREFIX)) Then _
             GoTo deps_sheet_error
         On Error GoTo general_error
@@ -364,7 +364,7 @@ End Sub
 
 'Writes the value to the cell and then steps the reference right to the next cell
 Private Sub writeStepRight(ByRef currentCell As Range, header As String)
-    currentCell.value = header: Set currentCell = currentCell.Offset(0, 1)
+    currentCell.Value = header: Set currentCell = currentCell.Offset(0, 1)
 End Sub
 
 'Gets the value in row 2 directly below said header in row 1
@@ -377,7 +377,7 @@ Private Function getColumnByHeader(header As String) As Integer
     Call activateMetaSheet
     Dim cell As Range
     For Each cell In ActiveSheet.usedRange.Rows(1).Cells
-        If cell.value = header Then
+        If cell.Value = header Then
             getColumnByHeader = cell.column
             Exit Function
         End If
@@ -392,17 +392,17 @@ End Sub
 Sub resetFormulaCount()
     Dim count As Long: count = formulaCount()
     Call activateMetaSheet
-    Cells(2, getColumnByHeader(TOTAL_WB_FORMULAS)).value = count
+    Cells(2, getColumnByHeader(TOTAL_WB_FORMULAS)).Value = count
 End Sub
 
 Sub resetMetaValues()
 Attribute resetMetaValues.VB_ProcData.VB_Invoke_Func = " \n14"
     Call activateMetaSheet
     Call resetFormulaCount
-    Cells(2, getColumnByHeader(STATUS)).value = STATUS_NONE
-    Cells(2, getColumnByHeader(CHUNK_SIZE)).value = DEFAULT_CHUNK_SIZE
-    Cells(2, getColumnByHeader(RUN_SIZE)).value = DEFAULT_RUN_SIZE
-    Cells(2, getColumnByHeader(EXTERNAL_ONLY)).value = DEFAULT_EXTERNAL_ONLY
+    Cells(2, getColumnByHeader(STATUS)).Value = STATUS_NONE
+    Cells(2, getColumnByHeader(CHUNK_SIZE)).Value = DEFAULT_CHUNK_SIZE
+    Cells(2, getColumnByHeader(RUN_SIZE)).Value = DEFAULT_RUN_SIZE
+    Cells(2, getColumnByHeader(EXTERNAL_ONLY)).Value = DEFAULT_EXTERNAL_ONLY
 End Sub
 
 Function formulaCount()

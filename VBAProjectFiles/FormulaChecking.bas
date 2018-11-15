@@ -30,8 +30,8 @@ Sub superCompress()
         For Each cell In column.Cells
             If isHighlighted(cell) Then
                 outputSheet.Cells(outputRow, 1) = getOriginalCellAddr(cell, shadowSheet)
-                outputSheet.Cells(outputRow, 2) = cell.Offset(-1, 0).value
-                outputSheet.Cells(outputRow, 3) = cell.value
+                outputSheet.Cells(outputRow, 2) = cell.Offset(-1, 0).Value
+                outputSheet.Cells(outputRow, 3) = cell.Value
                 outputRow = outputRow + 1
             End If
         Next
@@ -149,7 +149,7 @@ Sub FilterFormulaColumns(selectedRange As Range)
                     trimmedFormula = Right(trimmedFormula, Len(trimmedFormula) - 1)
                     Dim outputCell As Range
                     Set outputCell = outputSheet.Cells(outputRowIndex, currOutputCol)
-                    outputCell.value = trimmedFormula
+                    outputCell.Value = trimmedFormula
                 End If
                 outputRowIndex = outputRowIndex + 1
             Next cell
@@ -268,7 +268,7 @@ Function doesBelowRepeatFormula(cellAbove As Range, cellBelow As Range) As Boole
         doesBelowRepeatFormula = False
         Exit Function
     End If
-    Dim transformedBelowValue As String: transformedBelowValue = cellBelow.value
+    Dim transformedBelowValue As String: transformedBelowValue = cellBelow.Value
     'If we get to here then the lengths of the arrays match
     Dim i As Integer
     'We need this as a placeholder to remember where to start our next replacement
@@ -291,7 +291,7 @@ Function doesBelowRepeatFormula(cellAbove As Range, cellBelow As Range) As Boole
         'Shift our start index beyond the occurence we just replaced
         start = InStr(start, transformedBelowValue, aboveRef) + Len(aboveRef)
     Next
-    doesBelowRepeatFormula = cellAbove.value = transformedBelowValue
+    doesBelowRepeatFormula = cellAbove.Value = transformedBelowValue
 End Function
 
 'Gives back only the relative part of the ref

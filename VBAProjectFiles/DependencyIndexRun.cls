@@ -48,9 +48,9 @@ Public Sub processRow()
                         'DoEvents
                         'Debug.Print "...--->Precedent single cell: " & precCell.Address(external:=True)
                         If IsEmpty(precCell) Then
-                           precCell.value = sheetCellAddress(cell)
+                           precCell.Value = sheetCellAddress(cell)
                         Else
-                           precCell.value = precCell.value & ", " & sheetCellAddress(cell)
+                           precCell.Value = precCell.Value & ", " & sheetCellAddress(cell)
                         End If
                     Next precCell
                 Next prec
@@ -84,7 +84,7 @@ End Function
 
 Private Sub switchSheet()
     Dim nextSheetCell As Range: Set nextSheetCell = getNextSheetCell()
-    nextSheetCell.value = m_currentSheet.name
+    nextSheetCell.Value = m_currentSheet.name
     Dim currSheetCell As Range: Set currSheetCell = getCellUnderHeader(CURR_SHEET)
     If isLastSheet(m_currentSheet) Then
         Dim name As String: name = m_currentSheet.name
@@ -94,10 +94,10 @@ Private Sub switchSheet()
         Exit Sub
     End If
     Set m_currentSheet = Sheets(m_currentSheet.index + 1)
-    currSheetCell.value = m_currentSheet.name
+    currSheetCell.Value = m_currentSheet.name
     m_currentRow = 1
     Dim currRowCell As Range: Set currRowCell = getCellUnderHeader(CURR_ROW)
-    currRowCell.value = m_currentRow
+    currRowCell.Value = m_currentRow
 End Sub
 
 Private Sub Class_Initialize()
