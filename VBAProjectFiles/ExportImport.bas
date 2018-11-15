@@ -73,16 +73,19 @@ Public Sub ExportModules()
     Debug.Print "************** Files Exported to: " & szExportPath
 End Sub
 
-
-Public Sub ImportModules()
+Public Sub ImportModulesWarn()
     Dim answer As Integer
     answer = MsgBox("Import will overwrite the following modules with data from disk: " & _
     vbCrLf & whiteList() & vbCrLf & "Are you sure you want to proceed?", _
     vbYesNo + vbQuestion, "Import and Override?")
     If answer = vbNo Then
         Debug.Print "!!!!!!! No Import done. User cancelled."
-        Exit Sub
+    Else
+        Call ImportModules
     End If
+End Sub
+
+Private Sub ImportModules()
     Dim wkbTarget As Excel.Workbook
     Dim objFSO As Scripting.FileSystemObject
     Dim objFile As Scripting.File
