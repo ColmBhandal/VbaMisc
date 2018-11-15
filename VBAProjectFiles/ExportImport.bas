@@ -20,8 +20,12 @@ Public Sub loadHandlersToWB()
     Dim procNames As Collection: Set procNames = getAllProcNames(eventHandlerModule)
     Dim name As Variant
     For Each name In procNames
-        If shouldLoadToWb(name) Then _
-            MsgBox ("STUB: Call " & name & " from " & wbTargetFunction(name))
+        If shouldLoadToWb(name) Then
+            Dim targetSub As String: targetSub = wbTargetFunction(name)
+            MsgBox ("STUB: Call " & name & " from " & targetSub)
+            'In case the target WB function isn't there, add it with blank content
+            Call maybeAddSubToThisWorkbook(targetSub, "", "")
+        End If
     Next
 End Sub
 
@@ -72,6 +76,10 @@ End Sub
 Private Sub maybeAddSubToThisWorkbook(subName As String, subParams As String, subCode As String)
     Dim oCodeMod As VBIDE.CodeModule
     Set oCodeMod = getThisWorkbookModule
+    Call maybeAddSubToModule(oCodeMod, subName, subParams, subCode)
+End Sub
+
+Private Sub maybeAddSubToModule(oCodeMod As VBIDE.CodeModule, subName As String, subParams As String, subCode As String)
     If Not doesSubExist(subName, oCodeMod) Then
         oCodeMod.AddFromString "Private Sub " & subName & "(" & subParams & ")" _
         & vbCrLf & subCode & vbCrLf & "End Sub" & vbCrLf
