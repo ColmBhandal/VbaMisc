@@ -18,15 +18,24 @@ Public Sub loadHandlersToWB()
     Dim eventHandlerModule As VBIDE.CodeModule
     Set eventHandlerModule = getEventHandlerModule
     Dim procNames As Collection: Set procNames = getAllProcNames(eventHandlerModule)
-    Dim name As Variant
-    For Each name In procNames
-        If shouldLoadToWb(name) Then
-            Dim targetSub As String: targetSub = wbTargetFunction(name)
-            MsgBox ("STUB: Call " & name & " from " & targetSub)
+    Dim procName As Variant
+    For Each procName In procNames
+        If shouldLoadToWb(procName) Then
+            Dim targetProcName As String: targetProcName = wbTargetProcName(procName)
+            MsgBox ("STUB: Call " & procName & " from " & targetProcName)
             'In case the target WB function isn't there, add it with blank content
-            Call maybeAddSubToThisWorkbook(targetSub, "", "")
+            Call maybeAddSpecialSubToThisWB(targetProcName)
+            Call maybeAddCallToWbProc(procName, targetProcName)
         End If
     Next
+End Sub
+
+'Calls the procedure specified by procName from the procedure targetProcName in the WB module
+Private Sub maybeAddCallToWbProc(ByVal procName As String, ByVal targetProcName As String)
+    Dim wbModule As VBIDE.CodeModule: Set wbModule = getThisWorkbookModule
+    Dim lineNum As Integer
+    lineNum = wbModule.ProcBodyLine(targetProcName, vbext_pk_Proc)
+    MsgBox (targetProcName & " is on line " & lineNum)
 End Sub
 
 Sub testShouldLoadToWb()
@@ -46,8 +55,8 @@ Public Function shouldLoadToWb(ByVal procedureName As String) As Boolean
 End Function
 
 'Each function in the EventHandler has a target function in the workbook to call it
-Public Function wbTargetFunction(ByVal ehFnName As String) As String
-    wbTargetFunction = Replace(ehFnName, EH_PREFIX, WB_PREFIX)
+Public Function wbTargetProcName(ByVal ehFnName As String) As String
+    wbTargetProcName = Replace(ehFnName, EH_PREFIX, WB_PREFIX)
 End Function
 
 'Collection of Strings of Sub names in that module
@@ -71,6 +80,19 @@ End Function
 Private Sub testMaybeAddSubToThisWorkbook()
     Call maybeAddSubToThisWorkbook("testSub", "", "")
     Call maybeAddSubToThisWorkbook("testSub", "", "")
+End Sub
+
+'Adds an empty-bodied sub of the given name to the WB with the right arguments.
+Private Sub maybeAddSpecialSubToThisWB(subName As String)
+    Dim args As String: args = ""
+    Select Case subName
+        Case "Workbook_BeforeSave":
+            args = "ByVal SaveAsUI As Boolean, Cancel As Boolean"
+        Case Else:
+            Dim errorDesc As String: errorDesc = "Unhandled WB sub name: " & subName
+            Err.Raise Number:=513, Description:=errorDesc
+    End Select
+    Call maybeAddSubToThisWorkbook(subName, args, "")
 End Sub
 
 Private Sub maybeAddSubToThisWorkbook(subName As String, subParams As String, subCode As String)
