@@ -16,7 +16,8 @@ Public Sub loadHandlersToWB()
     Dim procNames As Collection: Set procNames = getAllProcNames(eventHandlerModule)
     Dim name As Variant
     For Each name In procNames
-        MsgBox (name)
+        If shouldLoadToWb(name) Then _
+            MsgBox ("STUB: Call " & name & " from " & wbTargetFunction(name))
     Next
 End Sub
 
