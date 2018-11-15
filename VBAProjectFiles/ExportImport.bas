@@ -11,8 +11,56 @@ End Sub
 
 'Loads the handlers defined in the EventHandler module to the ThisWorkbook module
 Public Sub loadHandlersToWB()
+    
+    
+    
     MsgBox ("Stub: Please implement me!")
 End Sub
+
+Private Sub testMaybeAddSubToThisWorkbook()
+    Call maybeAddSubToThisWorkbook("testSub", "", "")
+    Call maybeAddSubToThisWorkbook("testSub", "", "")
+End Sub
+
+
+Private Sub maybeAddSubToThisWorkbook(subName As String, subParams As String, subCode As String)
+    Dim oCodeMod As VBIDE.CodeModule
+    Set oCodeMod = getThiWorkbookModule
+    If Not doesSubExist(subName, oCodeMod) Then
+        oCodeMod.AddFromString "Private Sub " & subName & "(" & subParams & ")" _
+        & vbCrLf & subCode & vbCrLf & "End Sub" & vbCrLf
+    Else
+        Debug.Print "Sub " & subName & "already exists. Didn't add anything."
+    End If
+End Sub
+
+Private Sub testDoesSubExist()
+    Dim testVal As String: testVal = "Foo"
+    MsgBox (testVal & ": " & doesSubExist(testVal, getThiWorkbookModule()))
+    testVal = "Workbook_Open"
+    MsgBox (testVal & ": " & doesSubExist(testVal, getThiWorkbookModule()))
+End Sub
+
+Private Function getThiWorkbookModule()
+    Dim VBProj As VBIDE.VBProject
+    Dim oComp As VBIDE.VBComponent
+    Set VBProj = ThisWorkbook.VBProject
+    Set oComp = VBProj.VBComponents(ThisWorkbook.CodeName)
+    Set getThiWorkbookModule = oComp.CodeModule
+End Function
+
+'Does a sub with this name already exist in the modyule
+Private Function doesSubExist(subName As String, oCodeMod As VBIDE.CodeModule)
+    Dim startLine As Integer
+    'If the sub isn't there, ProcBodyLine will throw an error- which we use as conditional logic
+    On Error GoTo sub_does_not_exist
+    startLine = oCodeMod.ProcBodyLine(subName, vbext_pk_Proc)
+    On Error GoTo 0
+    doesSubExist = True
+    Exit Function
+sub_does_not_exist:
+    doesSubExist = False
+End Function
 
 Public Sub ExportModules()
     Dim bExport As Boolean
@@ -35,6 +83,7 @@ Public Sub ExportModules()
         Dim whiteListedModule As Variant
         For Each whiteListedModule In whiteListedModules()
             Kill FolderWithVBAProjectFiles & "\" & whiteListedModule & ".*"
+            Debug.Print "Deleted module: " & whiteListedModule
         Next
     On Error GoTo 0
 
@@ -81,7 +130,7 @@ Public Sub ExportModules()
    
     Next cmpComponent
 
-    Debug.Print "************** Files Exported to: " & szExportPath
+    Debug.Print "**" & Now & "** " & "Files Exported to: " & szExportPath
 End Sub
 
 Public Sub ImportModulesWarn()
