@@ -3,6 +3,17 @@ Option Explicit
 Const IOEXP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
 'Do not move the above line 2 to any other line - it's there to uniquely identify this module
 
+'Import tasks to do upon WB open
+Public Sub wbOpenImport()
+    Call ImportModules
+    Call loadHandlersToWB
+End Sub
+
+'Loads the handlers defined in the EventHandler module to the ThisWorkbook module
+Public Sub loadHandlersToWB()
+    MsgBox ("Stub: Please implement me!")
+End Sub
+
 Public Sub ExportModules()
     Dim bExport As Boolean
     Dim wkbSource As Excel.Workbook
@@ -85,7 +96,7 @@ Public Sub ImportModulesWarn()
     End If
 End Sub
 
-Private Sub ImportModules()
+Public Sub ImportModules()
     Dim wkbTarget As Excel.Workbook
     Dim objFSO As Scripting.FileSystemObject
     Dim objFile As Scripting.File
