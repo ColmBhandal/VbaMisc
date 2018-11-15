@@ -21,7 +21,10 @@ Public Sub ExportModules()
     End If
     
     On Error Resume Next
-        Kill FolderWithVBAProjectFiles & "\*.*"
+        Dim whiteListedModule As Variant
+        For Each whiteListedModule In whiteListedModules()
+            Kill FolderWithVBAProjectFiles & "\" & whiteListedModule & ".*"
+        Next
     On Error GoTo 0
 
     ''' NOTE: This workbook must be open in Excel.
