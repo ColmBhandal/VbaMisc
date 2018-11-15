@@ -2,6 +2,10 @@ Attribute VB_Name = "ExportImport"
 Option Explicit
 Const IOEXP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
 'Do not move the above line 2 to any other line - it's there to uniquely identify this module
+'Procedures prefixed with this string will be called from the corresponding
+'event procedure in the ThisWorkbook module
+Const EH_PREFIX = "EH_"
+Private Const WB_PREFIX = "Workbook_"
 
 'Import tasks to do upon WB open
 Public Sub wbOpenImport()
@@ -20,6 +24,27 @@ Public Sub loadHandlersToWB()
             MsgBox ("STUB: Call " & name & " from " & wbTargetFunction(name))
     Next
 End Sub
+
+Sub testShouldLoadToWb()
+    Dim testVal As String: testVal = "Foo"
+    MsgBox (testVal & ": " & shouldLoadToWb(testVal))
+    testVal = EH_PREFIX & "Bar"
+    MsgBox (testVal & ": " & shouldLoadToWb(testVal))
+End Sub
+
+'Return True iff the procedure by that name should to to the ThisWorkbook module
+Public Function shouldLoadToWb(ByVal procedureName As String) As Boolean
+    If InStr(1, procedureName, EH_PREFIX) = 1 Then
+        shouldLoadToWb = True
+    Else
+        shouldLoadToWb = False
+    End If
+End Function
+
+'Each function in the EventHandler has a target function in the workbook to call it
+Public Function wbTargetFunction(ByVal ehFnName As String) As String
+    wbTargetFunction = Replace(ehFnName, EH_PREFIX, WB_PREFIX)
+End Function
 
 'Collection of Strings of Sub names in that module
 Private Function getAllProcNames(module As VBIDE.CodeModule) As Collection
