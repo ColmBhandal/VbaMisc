@@ -318,8 +318,9 @@ Public Sub ImportModulesWarn()
 End Sub
 
 Public Sub ImportModules()
+    Debug.Print "----" & Now & "---- " & "Imports starting"
     Call ImportMiscModules
-    Debug.Print "************** Import complete"
+    Debug.Print "----" & Now & "---- " & "All Imports complete"
 End Sub
 
 Public Sub ImportMiscModules()
@@ -386,6 +387,7 @@ Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
         End If
     Next
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
+    Debug.Print "**" & Now & "** " & "Completed import from: " & importFolder
 End Sub
 
 Sub testCreateFolderWithVBAMiscFiles()
