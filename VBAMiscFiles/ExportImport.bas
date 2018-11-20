@@ -561,8 +561,8 @@ Private Sub testIsWhiteListed()
     Dim moduleName1 As String, moduleName2 As String
     moduleName1 = "Dependencies"
     moduleName2 = "MyModule"
-    MsgBox (moduleName1 & " is whitelisted: " & isWhiteListed(moduleName1))
-    MsgBox (moduleName2 & " is whitelisted: " & isWhiteListed(moduleName2))
+    MsgBox (moduleName1 & " is whitelisted: " & isWhiteListed(moduleName1, miscWhiteList()))
+    MsgBox (moduleName2 & " is whitelisted: " & isWhiteListed(moduleName2, miscWhiteList()))
 End Sub
 
 Sub testStringInArray()
