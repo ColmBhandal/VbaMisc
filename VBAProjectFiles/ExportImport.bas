@@ -1,6 +1,6 @@
 Attribute VB_Name = "ExportImport"
 Option Explicit
-Const IOEXP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
+Const EXPIMP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
 'Do not move the above line 2 to any other line - it's there to uniquely identify this module
 'Procedures prefixed with this string will be called from the corresponding
 'event procedure in the ThisWorkbook module
@@ -335,7 +335,7 @@ Public Sub ImportModules()
         End If
     Next
     Debug.Print "************** Import complete"
-    Call selectMetaModule(IOEXP_UNIQUE_STRING)
+    Call selectMetaModule(EXPIMP_UNIQUE_STRING)
 End Sub
 
 Function FolderWithVBAProjectFiles() As String
@@ -379,14 +379,14 @@ Sub DeleteVBAModulesAndUserForms()
         ElseIf isWhiteListed(VBComp.name) Then
             VBProj.VBComponents.Remove VBComp
         'We need to delete special meta modules
-        ElseIf (VBComp.name = IOEXP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
+        ElseIf (VBComp.name = EXPIMP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
             VBProj.VBComponents.Remove VBComp
         End If
     Next VBComp
 End Sub
 
 Private Sub RenameMetaModules()
-    RenameMetaModule (IOEXP_UNIQUE_STRING)
+    RenameMetaModule (EXPIMP_UNIQUE_STRING)
     RenameMetaModule (EH_UNIQUE_STRING)
 End Sub
 
