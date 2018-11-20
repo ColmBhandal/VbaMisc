@@ -35,9 +35,9 @@ Private Sub maybeAddCallToWbProc(ByVal procName As String, ByVal targetProcName 
     Dim wbModule As VBIDE.CodeModule: Set wbModule = getThisWorkbookModule
     Dim startLineNum As Long, currLineNum As Long, countLines As Long
     startLineNum = wbModule.ProcBodyLine(targetProcName, vbext_pk_Proc)
-    countLines = wbModule.ProcCountLines(targetProcName, vbext_pk_Proc)
+    countLines = countToProcEnd(wbModule, startLineNum)
     Dim currLine As String
-    For currLineNum = startLineNum + 1 To startLineNum + countLines - 2
+    For currLineNum = startLineNum + 1 To startLineNum + countLines - 1
         currLine = wbModule.lines(currLineNum, 1)
         'If the procedure is mentioned at all on any line, be conservative and don't add it
         If InStr(currLine, procName) <> 0 Then
@@ -49,6 +49,29 @@ Private Sub maybeAddCallToWbProc(ByVal procName As String, ByVal targetProcName 
     Call wbModule.InsertLines(currLineNum, "    Call " & procName)
     Debug.Print "Inserted a call to " & procName & " on line " & currLineNum
 End Sub
+
+Sub testCounttoProcEnd()
+    Dim lineNum As Long: lineNum = 1
+    Dim wbModule As VBIDE.CodeModule: Set wbModule = getThisWorkbookModule()
+    Dim count As Long: count = countToProcEnd(wbModule, lineNum)
+    MsgBox ("# lines to end in " & wbModule.Parent.name & " from line " & lineNum & " = " & count)
+End Sub
+
+Function countToProcEnd(wbModule As VBIDE.CodeModule, ByVal startLineNum As Long)
+    Dim currLineNum As Long: currLineNum = startLineNum
+    Dim currLine As String: currLine = wbModule.lines(currLineNum, 1)
+    Do While Not isEndProcLine(currLine)
+        currLineNum = currLineNum + 1
+        currLine = wbModule.lines(currLineNum, 1)
+    Loop
+    countToProcEnd = currLineNum - startLineNum
+End Function
+
+Function isEndProcLine(line As String)
+    isEndProcLine = False
+    If InStr(line, "End Sub") <> 0 Then isEndProcLine = True
+    If InStr(line, "End Function") <> 0 Then isEndProcLine = True
+End Function
 
 Sub testShouldLoadToWb()
     Dim testVal As String: testVal = "Foo"
@@ -122,6 +145,8 @@ Private Sub maybeAddSpecialSubToThisWB(subName As String)
             args = "ByVal Sh As Object"
         Case "Workbook_SheetFollowHyperlink":
             args = "ByVal Sh As Object, ByVal Target As Hyperlink"
+        Case "Workbook_Open":
+            args = ""
         Case Else:
             Dim errorDesc As String: errorDesc = "Unhandled WB sub name: " & subName
             Err.Raise Number:=513, Description:=errorDesc
