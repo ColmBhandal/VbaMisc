@@ -142,8 +142,9 @@ Private Sub maybeAddSubToModule(oCodeMod As VBIDE.CodeModule, subName As String,
     stringToAdd = stringToAdd & subCode & vbCrLf & "End Sub" & vbCrLf
     If Not doesSubExist(subName, oCodeMod) Then
         oCodeMod.AddFromString stringToAdd
+        Debug.Print "Added sub: " & subName & " to workbook."
     Else
-        Debug.Print "Sub " & subName & "already exists. Didn't add this sub to WB."
+        Debug.Print "Sub " & subName & " already exists. Didn't add this sub to WB."
     End If
 End Sub
 
