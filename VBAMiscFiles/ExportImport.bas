@@ -7,8 +7,10 @@ Const EXPIMP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
 Const EH_PREFIX = "EH_"
 Private Const WB_PREFIX = "Workbook_"
 Private Const CONFIG_FILE_NAME = "VbaMisc.config"
-Private Const REL_KEY = "rel: "
-Private Const ABS_KEY = "abs: "
+Private Const MISC_REL_KEY = "miscRel: "
+Private Const MISC_ABS_KEY = "miscAbs: "
+Private Const SPECIFIC_REL_KEY = "specificRel: "
+Private Const SPECIFIC_ABS_KEY = "specificAbs: "
 
 'Import tasks to do upon WB open
 Public Sub wbOpenImport()
@@ -214,7 +216,19 @@ sub_does_not_exist:
 End Function
 
 Public Sub ExportModules()
-Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
+    Debug.Print "----" & Now & "---- " & "Exports starting"
+    ExportMiscModules
+    Debug.Print "----" & Now & "---- " & "All exports complete"
+End Sub
+
+Private Sub ExportMiscModules()
+    Dim exportFolder As String: exportFolder = createFolderWithVBAMiscFiles
+    Dim whiteList() As String: whiteList = miscWhiteList()
+    Call ExportModulesTargeted(exportFolder, whiteList)
+End Sub
+
+Private Sub ExportModulesTargeted(exportFolder As String, whiteList() As String)
+Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
     Dim bExport As Boolean
     Dim wkbSource As Excel.Workbook
     Dim szSourceWorkbook As String
@@ -222,22 +236,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     Dim szFileName As String
     Dim cmpComponent As VBIDE.VBComponent
 
-    ''' The code modules will be exported in a folder named.
-    ''' VBAProjectFiles in the Documents folder.
-    ''' The code below create this folder if it not exist
-    ''' or delete all files in the folder if it exist.
-    If createFolderWithVBAMiscFiles = "Error" Then
-        MsgBox "Export Folder not exist"
-        Exit Sub
-    End If
-    
-    On Error Resume Next
-        Dim whiteListedModule As Variant
-        For Each whiteListedModule In whiteListedModules()
-            Kill createFolderWithVBAMiscFiles & "\" & whiteListedModule & ".*"
-            Debug.Print "Deleted module: " & whiteListedModule
-        Next
-    On Error GoTo 0
+    Debug.Print "**" & Now & "** " & "Ready for export to: " & exportFolder
 
     ''' NOTE: This workbook must be open in Excel.
     szSourceWorkbook = ActiveWorkbook.name
@@ -249,14 +248,31 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     Exit Sub
     End If
     
-    szExportPath = createFolderWithVBAMiscFiles & "\"
+    ''' The code modules will be exported in a folder named.
+    ''' VBAProjectFiles in the Documents folder.
+    ''' The code below create this folder if it not exist
+    ''' or delete all files in the folder if it exist.
+    If exportFolder = "Error" Then
+        MsgBox "Export Folder not exist"
+        Exit Sub
+    End If
+    
+    szExportPath = exportFolder & "\"
+    
+    On Error Resume Next
+        Dim whiteListedModule As Variant
+        For Each whiteListedModule In whiteList()
+            Kill szExportPath & whiteListedModule & ".*"
+            Debug.Print "Deleted module: " & whiteListedModule
+        Next
+    On Error GoTo 0
     
     For Each cmpComponent In wkbSource.VBProject.VBComponents
         
         bExport = True
         szFileName = cmpComponent.name
 
-        If (Not isWhiteListed(szFileName)) Then _
+        If (Not isWhiteListed(szFileName, whiteList)) Then _
             bExport = False
 
         ''' Concatenate the correct filename for export.
@@ -281,8 +297,8 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
         End If
    
     Next cmpComponent
-
-    Debug.Print "**" & Now & "** " & "Files Exported to: " & szExportPath
+    
+    Debug.Print "**" & Now & "** " & "Completed export to: " & exportFolder
 End Sub
 
 Public Sub ImportModulesWarn()
@@ -298,6 +314,15 @@ Public Sub ImportModulesWarn()
 End Sub
 
 Public Sub ImportModules()
+    Call ImportMiscModules
+    Debug.Print "************** Import complete"
+End Sub
+
+Public Sub ImportMiscModules()
+
+End Sub
+
+Public Sub ImportModulesFromFolder(whiteListed As Boolean, folderName As String)
     Dim wkbTarget As Excel.Workbook
     Dim objFSO As Scripting.FileSystemObject
     Dim objFile As Scripting.File
@@ -306,15 +331,9 @@ Public Sub ImportModules()
     Dim szFileName As String
     Dim cmpComponents As VBIDE.VBComponents
 
-    'If ActiveWorkbook.name = ThisWorkbook.name Then
-    '    MsgBox "Select another destination workbook" & _
-    '    "Not possible to import in this workbook "
-    '    Exit Sub
-    'End If
-
     'Get the path to the folder with modules
-    If createFolderWithVBAMiscFiles = "Error" Then
-        MsgBox "Import Folder not exist"
+    If folderName = "Error" Then
+        MsgBox "Problem with import/export folder. Quitting."
         Exit Sub
     End If
 
@@ -328,25 +347,30 @@ Public Sub ImportModules()
     Exit Sub
     End If
 
-    'Potentially rename this module so it works with import
-    Call RenameMetaModules
-
     ''' NOTE: Path where the code modules are located.
-    szImportPath = createFolderWithVBAMiscFiles & "\"
+    szImportPath = folderName & "\"
     Debug.Print "Ready to import files from: " & szImportPath
             
     Set objFSO = New Scripting.FileSystemObject
     If objFSO.GetFolder(szImportPath).Files.count = 0 Then
-       MsgBox "There are no files to import"
+       Debug.Print "There are no files to import"
        Exit Sub
     End If
+        
+    If (whiteListed) Then
+        'Delete whitelisted all modules/Userforms from the ActiveWorkbook
+        Call DeleteVBAModulesAndUserForms
+        'We need to rename some modules that are being used during import to avoid collisions
+        Call RenameMetaModules
+    Else
+        
+    End If
     
-    'Delete all modules/Userforms from the ActiveWorkbook
-    Call DeleteVBAModulesAndUserForms
+    
 
     Set cmpComponents = wkbTarget.VBProject.VBComponents
     
-    ''' Import all the code modules in the specified path
+    ''' Import whitelisted code modules in the specified path
     ''' to the ActiveWorkbook.
     For Each objFile In objFSO.GetFolder(szImportPath).Files
         If (objFSO.GetExtensionName(objFile.name) = "cls") Or _
@@ -362,18 +386,27 @@ Public Sub ImportModules()
                 End If
         End If
     Next
-    Debug.Print "************** Import complete"
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
 End Sub
 
 Sub testCreateFolderWithVBAMiscFiles()
     MsgBox (createFolderWithVBAMiscFiles())
+    MsgBox (createFolderWithProjectSpecificVBAFiles())
 End Sub
+
+Function createFolderWithProjectSpecificVBAFiles() As String
+    Dim fso As New FileSystemObject
+    Dim totalPath As String: totalPath = getFolderWithProjectSpecificVbaFiles(fso)
+    createFolderWithProjectSpecificVBAFiles = createFolderWithVBAFiles(fso, totalPath)
+End Function
 
 Function createFolderWithVBAMiscFiles() As String
     Dim fso As New FileSystemObject
     Dim totalPath As String: totalPath = getFolderWithVbaMiscFiles(fso)
-    
+    createFolderWithVBAMiscFiles = createFolderWithVBAFiles(fso, totalPath)
+End Function
+
+Function createFolderWithVBAFiles(fso As FileSystemObject, totalPath As String) As String
     If (totalPath = "") Then
         totalPath = getWorkingDirPath() & "VBAMiscFiles"
     End If
@@ -386,35 +419,44 @@ Function createFolderWithVBAMiscFiles() As String
     End If
     
     If fso.FolderExists(totalPath) = True Then
-        createFolderWithVBAMiscFiles = totalPath
+        createFolderWithVBAFiles = totalPath
     Else
-        createFolderWithVBAMiscFiles = "Error"
+        createFolderWithVBAFiles = "Error"
     End If
     
 End Function
 
-Sub testGetFolderWithVBAMiscFiles()
+Sub testGetFolderWithVBAFiles()
     MsgBox (getFolderWithVbaMiscFiles(New FileSystemObject))
+    MsgBox (getFolderWithProjectSpecificVbaFiles(New FileSystemObject))
 End Sub
 
+Function getFolderWithProjectSpecificVbaFiles(fso As FileSystemObject) As String
+    getFolderWithProjectSpecificVbaFiles = getFolderWithVbaFiles(fso, SPECIFIC_REL_KEY, SPECIFIC_ABS_KEY)
+End Function
+
 Function getFolderWithVbaMiscFiles(fso As FileSystemObject) As String
+    getFolderWithVbaMiscFiles = getFolderWithVbaFiles(fso, MISC_REL_KEY, MISC_ABS_KEY)
+End Function
+
+Function getFolderWithVbaFiles(fso As FileSystemObject, relKey As String, absKey As String) As String
     If (fso.FileExists(getConfigFileFullPath())) Then
         Dim textStream As textStream: Set textStream = getConfigInputStream(fso)
         Do While (Not textStream.AtEndOfLine)
             Dim currLine As String: currLine = textStream.ReadLine
             Dim val As String
-            If InStr(currLine, REL_KEY) = 1 Then
-                val = Replace(currLine, REL_KEY, "", 1, 1)
-                getFolderWithVbaMiscFiles = getWorkingDirPath() & val
+            If InStr(currLine, relKey) = 1 Then
+                val = Replace(currLine, relKey, "", 1, 1)
+                getFolderWithVbaFiles = getWorkingDirPath() & val
                 Exit Function
-            ElseIf InStr(currLine, ABS_KEY) = 1 Then
-                val = Replace(currLine, ABS_KEY, "", 1, 1)
-                getFolderWithVbaMiscFiles = val
+            ElseIf InStr(currLine, absKey) = 1 Then
+                val = Replace(currLine, absKey, "", 1, 1)
+                getFolderWithVbaFiles = val
                 Exit Function
             End If
         Loop
     End If
-    getFolderWithVbaMiscFiles = ""
+    getFolderWithVbaFiles = ""
 End Function
 
 Sub testGetConfigInputStream()
@@ -449,7 +491,7 @@ Function getWorkingDirPath()
     getWorkingDirPath = prefixPath
 End Function
 
-Sub DeleteVBAModulesAndUserForms()
+Sub DeleteVBAModulesAndUserForms(whiteListed As Boolean)
     Dim VBProj As VBIDE.VBProject
     Dim VBComp As VBIDE.VBComponent
     
@@ -459,7 +501,7 @@ Sub DeleteVBAModulesAndUserForms()
         If VBComp.Type = vbext_ct_Document Then
             'Thisworkbook or worksheet module
             'We do nothing
-        ElseIf isWhiteListed(VBComp.name) Then
+        ElseIf isWhiteListed(VBComp.name) = whiteListed Then
             VBProj.VBComponents.Remove VBComp
         'We need to delete special meta modules
         ElseIf (VBComp.name = EXPIMP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
@@ -545,17 +587,17 @@ Public Function stringInArray(str As String, strArr() As String) As Boolean
     stringInArray = False
 End Function
 
-Private Function isWhiteListed(moduleName As String) As Boolean
-    isWhiteListed = stringInArray(moduleName, whiteListedModules())
+Private Function isWhiteListed(moduleName As String, whiteList() As String) As Boolean
+    isWhiteListed = stringInArray(moduleName, whiteList)
 End Function
 
-Private Function whiteListedModules() As String()
-    whiteListedModules = Split(whiteList(), ",")
+Private Function miscWhiteList() As String()
+    miscWhiteList = Split(miscRawWhiteList(), ",")
 End Function
 
 'Only modules on this list will get imported/exported
 'Add your modules to the whiteList variable, separated by commas
-Private Function whiteList() As String
-    whiteList = "Dependencies,DependencyIndexing,DependencyIndexRun,ExportImport,FormulaChecking,GeneralPurpose" _
+Private Function miscRawWhiteList() As String
+    miscRawWhiteList = "Dependencies,DependencyIndexing,DependencyIndexRun,ExportImport,FormulaChecking,GeneralPurpose" _
     & ",EventHandler"
 End Function
