@@ -152,6 +152,10 @@ Private Sub maybeAddSpecialSubToThisWB(subName As String)
             args = "ByVal Sh As Object, ByVal Target As Hyperlink"
         Case "Workbook_Open":
             args = ""
+        Case "Workbook_WindowActivate":
+            args = "ByVal Wn As Window"
+        Case "Workbook_WindowDeactivate":
+            args = "ByVal Wn As Window"
         Case Else:
             Dim errorDesc As String: errorDesc = "Unhandled WB sub name: " & subName
             Err.Raise Number:=513, Description:=errorDesc
