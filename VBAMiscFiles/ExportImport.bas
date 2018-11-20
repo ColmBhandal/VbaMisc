@@ -6,6 +6,9 @@ Const EXPIMP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
 'event procedure in the ThisWorkbook module
 Const EH_PREFIX = "EH_"
 Private Const WB_PREFIX = "Workbook_"
+Private Const CONFIG_FILE_NAME = "VbaMisc.config"
+Private Const REL_KEY = "rel: "
+Private Const ABS_KEY = "abs: "
 
 'Import tasks to do upon WB open
 Public Sub wbOpenImport()
@@ -223,7 +226,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     ''' VBAProjectFiles in the Documents folder.
     ''' The code below create this folder if it not exist
     ''' or delete all files in the folder if it exist.
-    If FolderWithVBAProjectFiles = "Error" Then
+    If getFolderWithVBAMiscFiles = "Error" Then
         MsgBox "Export Folder not exist"
         Exit Sub
     End If
@@ -231,7 +234,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     On Error Resume Next
         Dim whiteListedModule As Variant
         For Each whiteListedModule In whiteListedModules()
-            Kill FolderWithVBAProjectFiles & "\" & whiteListedModule & ".*"
+            Kill getFolderWithVBAMiscFiles & "\" & whiteListedModule & ".*"
             Debug.Print "Deleted module: " & whiteListedModule
         Next
     On Error GoTo 0
@@ -246,7 +249,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     Exit Sub
     End If
     
-    szExportPath = FolderWithVBAProjectFiles & "\"
+    szExportPath = getFolderWithVBAMiscFiles & "\"
     
     For Each cmpComponent In wkbSource.VBProject.VBComponents
         
@@ -310,7 +313,7 @@ Public Sub ImportModules()
     'End If
 
     'Get the path to the folder with modules
-    If FolderWithVBAProjectFiles = "Error" Then
+    If getFolderWithVBAMiscFiles = "Error" Then
         MsgBox "Import Folder not exist"
         Exit Sub
     End If
@@ -329,7 +332,7 @@ Public Sub ImportModules()
     Call RenameMetaModules
 
     ''' NOTE: Path where the code modules are located.
-    szImportPath = FolderWithVBAProjectFiles & "\"
+    szImportPath = getFolderWithVBAMiscFiles & "\"
     Debug.Print "Ready to import files from: " & szImportPath
             
     Set objFSO = New Scripting.FileSystemObject
@@ -363,32 +366,78 @@ Public Sub ImportModules()
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
 End Sub
 
-Function FolderWithVBAProjectFiles() As String
-    Dim FSO As Object
-    Set FSO = CreateObject("scripting.filesystemobject")
-    Dim relativePath As String: relativePath = "VBAProjectFiles"
-    Dim prefixPath As String
-    
-    prefixPath = ActiveWorkbook.path
+Sub testGetFolderWithVBAMiscFiles()
+    MsgBox (getFolderWithVBAMiscFiles())
+End Sub
 
-    If Right(prefixPath, 1) <> "\" Then
-        prefixPath = prefixPath & "\"
+Function getFolderWithVBAMiscFiles() As String
+    Dim fso As New FileSystemObject
+    Dim totalPath As String: totalPath = ""
+    
+    If (fso.FileExists(getConfigFileFullPath())) Then
+        Dim textStream As textStream: Set textStream = getConfigInputStream(fso)
+        Do While (Not textStream.AtEndOfLine)
+            Dim currLine As String: currLine = textStream.ReadLine
+            Dim val As String
+            If InStr(currLine, REL_KEY) <> 0 Then
+                val = Replace(currLine, REL_KEY, "", 1, 1)
+                totalPath = getWorkingDirPath() & val
+            ElseIf InStr(currLine, ABS_KEY) <> 0 Then
+                val = Replace(currLine, ABS_KEY, "", 1, 1)
+                totalPath = val
+            End If
+        Loop
     End If
     
-    Dim totalpath As String: totalpath = prefixPath & relativePath
+    If (totalPath = "") Then
+        totalPath = getWorkingDirPath() & "VBAMiscFiles"
+    End If
     
-    If FSO.FolderExists(totalpath) = False Then
+    If Not fso.FolderExists(totalPath) Then
         On Error Resume Next
-        MkDir totalpath
+        Debug.Print "No folder exists. Attempting to make: " & totalPath
+        MkDir totalPath
         On Error GoTo 0
     End If
     
-    If FSO.FolderExists(totalpath) = True Then
-        FolderWithVBAProjectFiles = totalpath
+    If fso.FolderExists(totalPath) = True Then
+        getFolderWithVBAMiscFiles = totalPath
     Else
-        FolderWithVBAProjectFiles = "Error"
+        getFolderWithVBAMiscFiles = "Error"
     End If
     
+End Function
+
+Sub testGetConfigInputStream()
+    MsgBox (getConfigInputStream(New FileSystemObject).AtEndOfLine)
+End Sub
+
+Function getConfigInputStream(fso As FileSystemObject) As textStream
+    Dim fullPath As String: fullPath = getConfigFileFullPath()
+    On Error GoTo config_textStream_Error
+    Set getConfigInputStream = fso.OpenTextFile(fullPath)
+    On Error GoTo 0
+    Exit Function
+config_textStream_Error:
+    Dim errorDesc As String: errorDesc = "Failed to connect text stream to file: " & fullPath
+    Err.Raise Number:=513, Description:=errorDesc
+End Function
+
+Function getConfigFileFullPath() As String
+    getConfigFileFullPath = getWorkingDirPath() & CONFIG_FILE_NAME
+End Function
+
+Sub testGetWorkingDirPath()
+    MsgBox (getWorkingDirPath())
+End Sub
+
+Function getWorkingDirPath()
+    Dim prefixPath As String
+    prefixPath = ActiveWorkbook.path
+    If Right(prefixPath, 1) <> "\" Then
+        prefixPath = prefixPath & "\"
+    End If
+    getWorkingDirPath = prefixPath
 End Function
 
 Sub DeleteVBAModulesAndUserForms()

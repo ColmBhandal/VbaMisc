@@ -97,7 +97,7 @@ Function findDents(rng As Range, internal As Boolean, precDir As Boolean, stopAt
     bNewArrow = True
     Do
         Do
-            Application.GoTo rLast
+            Application.Goto rLast
             On Error Resume Next
             ActiveCell.NavigateArrow TowardPrecedent:=precDir, ArrowNumber:=iArrowNum, LinkNumber:=iLinkNum
             If Err.Number > 0 Then Exit Do
@@ -123,7 +123,7 @@ Function findDents(rng As Range, internal As Boolean, precDir As Boolean, stopAt
 cleanupAndReturn:
     
     rLast.Parent.ClearArrows
-    Application.GoTo rLast
+    Application.Goto rLast
     Set findDents = dents
 End Function
 
@@ -155,7 +155,7 @@ Function findAllDentsUnhide(rng As Range, precDir As Boolean, shouldUnhide As Bo
     bNewArrow = True
     Do
         Do
-            Application.GoTo rLast
+            Application.Goto rLast
             On Error Resume Next
             ActiveCell.NavigateArrow TowardPrecedent:=precDir, ArrowNumber:=iArrowNum, LinkNumber:=iLinkNum
             If Err.Number > 0 Then Exit Do
@@ -173,7 +173,7 @@ Function findAllDentsUnhide(rng As Range, precDir As Boolean, shouldUnhide As Bo
         iArrowNum = iArrowNum + 1 'try another arrow
     Loop
     rLast.Parent.ClearArrows
-    Application.GoTo rLast
+    Application.Goto rLast
     Set findAllDentsUnhide = dents
 End Function
 
