@@ -226,7 +226,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     ''' VBAProjectFiles in the Documents folder.
     ''' The code below create this folder if it not exist
     ''' or delete all files in the folder if it exist.
-    If getFolderWithVBAMiscFiles = "Error" Then
+    If createFolderWithVBAMiscFiles = "Error" Then
         MsgBox "Export Folder not exist"
         Exit Sub
     End If
@@ -234,7 +234,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     On Error Resume Next
         Dim whiteListedModule As Variant
         For Each whiteListedModule In whiteListedModules()
-            Kill getFolderWithVBAMiscFiles & "\" & whiteListedModule & ".*"
+            Kill createFolderWithVBAMiscFiles & "\" & whiteListedModule & ".*"
             Debug.Print "Deleted module: " & whiteListedModule
         Next
     On Error GoTo 0
@@ -249,7 +249,7 @@ Attribute ExportModules.VB_ProcData.VB_Invoke_Func = "p\n14"
     Exit Sub
     End If
     
-    szExportPath = getFolderWithVBAMiscFiles & "\"
+    szExportPath = createFolderWithVBAMiscFiles & "\"
     
     For Each cmpComponent In wkbSource.VBProject.VBComponents
         
@@ -313,7 +313,7 @@ Public Sub ImportModules()
     'End If
 
     'Get the path to the folder with modules
-    If getFolderWithVBAMiscFiles = "Error" Then
+    If createFolderWithVBAMiscFiles = "Error" Then
         MsgBox "Import Folder not exist"
         Exit Sub
     End If
@@ -332,7 +332,7 @@ Public Sub ImportModules()
     Call RenameMetaModules
 
     ''' NOTE: Path where the code modules are located.
-    szImportPath = getFolderWithVBAMiscFiles & "\"
+    szImportPath = createFolderWithVBAMiscFiles & "\"
     Debug.Print "Ready to import files from: " & szImportPath
             
     Set objFSO = New Scripting.FileSystemObject
@@ -366,28 +366,13 @@ Public Sub ImportModules()
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
 End Sub
 
-Sub testGetFolderWithVBAMiscFiles()
-    MsgBox (getFolderWithVBAMiscFiles())
+Sub testCreateFolderWithVBAMiscFiles()
+    MsgBox (createFolderWithVBAMiscFiles())
 End Sub
 
-Function getFolderWithVBAMiscFiles() As String
+Function createFolderWithVBAMiscFiles() As String
     Dim fso As New FileSystemObject
-    Dim totalPath As String: totalPath = ""
-    
-    If (fso.FileExists(getConfigFileFullPath())) Then
-        Dim textStream As textStream: Set textStream = getConfigInputStream(fso)
-        Do While (Not textStream.AtEndOfLine)
-            Dim currLine As String: currLine = textStream.ReadLine
-            Dim val As String
-            If InStr(currLine, REL_KEY) <> 0 Then
-                val = Replace(currLine, REL_KEY, "", 1, 1)
-                totalPath = getWorkingDirPath() & val
-            ElseIf InStr(currLine, ABS_KEY) <> 0 Then
-                val = Replace(currLine, ABS_KEY, "", 1, 1)
-                totalPath = val
-            End If
-        Loop
-    End If
+    Dim totalPath As String: totalPath = getFolderWithVbaMiscFiles(fso)
     
     If (totalPath = "") Then
         totalPath = getWorkingDirPath() & "VBAMiscFiles"
@@ -401,11 +386,35 @@ Function getFolderWithVBAMiscFiles() As String
     End If
     
     If fso.FolderExists(totalPath) = True Then
-        getFolderWithVBAMiscFiles = totalPath
+        createFolderWithVBAMiscFiles = totalPath
     Else
-        getFolderWithVBAMiscFiles = "Error"
+        createFolderWithVBAMiscFiles = "Error"
     End If
     
+End Function
+
+Sub testGetFolderWithVBAMiscFiles()
+    MsgBox (getFolderWithVbaMiscFiles(New FileSystemObject))
+End Sub
+
+Function getFolderWithVbaMiscFiles(fso As FileSystemObject) As String
+    If (fso.FileExists(getConfigFileFullPath())) Then
+        Dim textStream As textStream: Set textStream = getConfigInputStream(fso)
+        Do While (Not textStream.AtEndOfLine)
+            Dim currLine As String: currLine = textStream.ReadLine
+            Dim val As String
+            If InStr(currLine, REL_KEY) = 1 Then
+                val = Replace(currLine, REL_KEY, "", 1, 1)
+                getFolderWithVbaMiscFiles = getWorkingDirPath() & val
+                Exit Function
+            ElseIf InStr(currLine, ABS_KEY) = 1 Then
+                val = Replace(currLine, ABS_KEY, "", 1, 1)
+                getFolderWithVbaMiscFiles = val
+                Exit Function
+            End If
+        Loop
+    End If
+    getFolderWithVbaMiscFiles = ""
 End Function
 
 Sub testGetConfigInputStream()
