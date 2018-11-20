@@ -9,8 +9,9 @@ Private Const WB_PREFIX = "Workbook_"
 
 'Import tasks to do upon WB open
 Public Sub wbOpenImport()
-    Call ImportModules
     Call loadHandlersToWB
+    'Call to Import Modules must come last or you'll get wbOpenImport duplicated & ambiguous
+    Call ImportModules
 End Sub
 
 'Loads the handlers defined in the EventHandler module to the ThisWorkbook module
