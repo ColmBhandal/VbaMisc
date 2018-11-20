@@ -319,10 +319,10 @@ Public Sub ImportModules()
 End Sub
 
 Public Sub ImportMiscModules()
-
+    Call ImportModulesTargeted(createFolderWithVBAMiscFiles, miscWhiteList)
 End Sub
 
-Public Sub ImportModulesFromFolder(whiteListed As Boolean, folderName As String)
+Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     Dim wkbTarget As Excel.Workbook
     Dim objFSO As Scripting.FileSystemObject
     Dim objFile As Scripting.File
@@ -332,7 +332,7 @@ Public Sub ImportModulesFromFolder(whiteListed As Boolean, folderName As String)
     Dim cmpComponents As VBIDE.VBComponents
 
     'Get the path to the folder with modules
-    If folderName = "Error" Then
+    If importFolder = "Error" Then
         MsgBox "Problem with import/export folder. Quitting."
         Exit Sub
     End If
@@ -348,7 +348,7 @@ Public Sub ImportModulesFromFolder(whiteListed As Boolean, folderName As String)
     End If
 
     ''' NOTE: Path where the code modules are located.
-    szImportPath = folderName & "\"
+    szImportPath = importFolder & "\"
     Debug.Print "Ready to import files from: " & szImportPath
             
     Set objFSO = New Scripting.FileSystemObject
@@ -357,17 +357,12 @@ Public Sub ImportModulesFromFolder(whiteListed As Boolean, folderName As String)
        Exit Sub
     End If
         
-    If (whiteListed) Then
-        'Delete whitelisted all modules/Userforms from the ActiveWorkbook
-        Call DeleteVBAModulesAndUserForms
-        'We need to rename some modules that are being used during import to avoid collisions
-        Call RenameMetaModules
-    Else
-        
-    End If
-    
-    
+    'Delete whitelisted all modules/Userforms from the ActiveWorkbook
+    Call DeleteVBAModulesAndUserForms(whiteList)
 
+    'We need to rename some modules that are being used during import to avoid collisions
+    Call RenameMetaModules(whiteList)
+    
     Set cmpComponents = wkbTarget.VBProject.VBComponents
     
     ''' Import whitelisted code modules in the specified path
@@ -378,7 +373,7 @@ Public Sub ImportModulesFromFolder(whiteListed As Boolean, folderName As String)
             (objFSO.GetExtensionName(objFile.name) = "bas") Then
                 Dim moduleName As String
                 moduleName = Split(objFile.name, ".")(0)
-                If isWhiteListed(moduleName) Then
+                If isWhiteListed(moduleName, whiteList) Then
                     cmpComponents.Import objFile.path
                     Debug.Print "Imported " & objFile.name
                 Else
@@ -491,7 +486,7 @@ Function getWorkingDirPath()
     getWorkingDirPath = prefixPath
 End Function
 
-Sub DeleteVBAModulesAndUserForms(whiteListed As Boolean)
+Sub DeleteVBAModulesAndUserForms(whiteList() As String)
     Dim VBProj As VBIDE.VBProject
     Dim VBComp As VBIDE.VBComponent
     
@@ -501,7 +496,7 @@ Sub DeleteVBAModulesAndUserForms(whiteListed As Boolean)
         If VBComp.Type = vbext_ct_Document Then
             'Thisworkbook or worksheet module
             'We do nothing
-        ElseIf isWhiteListed(VBComp.name) = whiteListed Then
+        ElseIf isWhiteListed(VBComp.name, whiteList) Then
             VBProj.VBComponents.Remove VBComp
         'We need to delete special meta modules
         ElseIf (VBComp.name = EXPIMP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
@@ -510,13 +505,13 @@ Sub DeleteVBAModulesAndUserForms(whiteListed As Boolean)
     Next VBComp
 End Sub
 
-Private Sub RenameMetaModules()
-    RenameMetaModule (EXPIMP_UNIQUE_STRING)
-    RenameMetaModule (EH_UNIQUE_STRING)
+Private Sub RenameMetaModules(whiteList() As String)
+    Call RenameMetaModule(EXPIMP_UNIQUE_STRING, whiteList)
+    Call RenameMetaModule(EH_UNIQUE_STRING, whiteList)
 End Sub
 
-Private Sub RenameMetaModule(uniqueIdentifier As String)
-    If (Not isWhiteListed(getMetaModule(uniqueIdentifier).name)) Then Exit Sub
+Private Sub RenameMetaModule(uniqueIdentifier As String, whiteList() As String)
+    If Not isWhiteListed(getMetaModule(uniqueIdentifier).name, whiteList) Then Exit Sub
     Dim VBComp As VBIDE.VBComponent
     Set VBComp = getMetaModule(uniqueIdentifier)
     Dim oldName As String: oldName = VBComp.name
