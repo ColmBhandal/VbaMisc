@@ -23,7 +23,6 @@ Public Sub loadHandlersToWB()
     For Each procName In procNames
         If shouldLoadToWb(procName) Then
             Dim targetProcName As String: targetProcName = wbTargetProcName(procName)
-            MsgBox ("STUB: Call " & procName & " from " & targetProcName)
             'In case the target WB function isn't there, add it with blank content
             Call maybeAddSpecialSubToThisWB(targetProcName)
             Call maybeAddCallToWbProc(procName, targetProcName)
