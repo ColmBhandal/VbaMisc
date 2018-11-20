@@ -300,6 +300,9 @@ Public Sub ImportModules()
     Exit Sub
     End If
 
+    'Potentially rename this module so it works with import
+    Call RenameMetaModules
+
     ''' NOTE: Path where the code modules are located.
     szImportPath = FolderWithVBAProjectFiles & "\"
     Debug.Print "Ready to import files from: " & szImportPath
@@ -308,12 +311,6 @@ Public Sub ImportModules()
     If objFSO.GetFolder(szImportPath).Files.count = 0 Then
        MsgBox "There are no files to import"
        Exit Sub
-    End If
-
-    'Potentially rename this module so it works with import
-    If (shouldRenameThisModule()) Then
-        Call RenameThisModule
-        Debug.Print "Renamed this module to " & IOEXP_UNIQUE_STRING & " to avoid name collision with import."
     End If
     
     'Delete all modules/Userforms from the ActiveWorkbook
@@ -338,7 +335,7 @@ Public Sub ImportModules()
         End If
     Next
     Debug.Print "************** Import complete"
-    Call selectThisModule
+    Call selectMetaModule(IOEXP_UNIQUE_STRING)
 End Sub
 
 Function FolderWithVBAProjectFiles() As String
@@ -381,35 +378,39 @@ Sub DeleteVBAModulesAndUserForms()
             'We do nothing
         ElseIf isWhiteListed(VBComp.name) Then
             VBProj.VBComponents.Remove VBComp
-        'We need to delete this module itself it it has been renamed
-        ElseIf (VBComp.name = IOEXP_UNIQUE_STRING) Then
+        'We need to delete special meta modules
+        ElseIf (VBComp.name = IOEXP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
             VBProj.VBComponents.Remove VBComp
         End If
     Next VBComp
 End Sub
 
-Private Sub RenameThisModule()
+Private Sub RenameMetaModules()
+    RenameMetaModule (IOEXP_UNIQUE_STRING)
+    RenameMetaModule (EH_UNIQUE_STRING)
+End Sub
+
+Private Sub RenameMetaModule(uniqueIdentifier As String)
+    If (Not isWhiteListed(getMetaModule(uniqueIdentifier).name)) Then Exit Sub
     Dim VBComp As VBIDE.VBComponent
-    Set VBComp = getThisModule()
+    Set VBComp = getMetaModule(uniqueIdentifier)
+    Dim oldName As String: oldName = VBComp.name
     On Error GoTo rename_error
-    VBComp.name = IOEXP_UNIQUE_STRING
+    VBComp.name = uniqueIdentifier
+    On Error GoTo 0
+    Debug.Print "Renamed " & oldName & " to " & uniqueIdentifier
     Exit Sub
 rename_error:
-    Dim errorDesc As String: errorDesc = "Failed to rename the current module to " & IOEXP_UNIQUE_STRING & _
+    Dim errorDesc As String: errorDesc = "Failed to rename the module " & oldName & "to " & uniqueIdentifier & _
         ". Does a module with that name already exist?"
     Err.Raise Number:=513, Description:=errorDesc
 End Sub
 
-Private Sub selectThisModule()
-    getThisModule().Activate
+Private Sub selectMetaModule(uniqueIdentifier As String)
+    getMetaModule(uniqueIdentifier).Activate
 End Sub
 
-'Only rename the current module if it's on the whitelist, to avoid a collision
-Private Function shouldRenameThisModule() As Boolean
-    shouldRenameThisModule = isWhiteListed(getThisModule().name)
-End Function
-
-Private Function getThisModule() As VBIDE.VBComponent
+Private Function getMetaModule(uniqueIdentifier As String) As VBIDE.VBComponent
     Dim VBProj As VBIDE.VBProject
     Set VBProj = ActiveWorkbook.VBProject
     Dim VBComp As VBIDE.VBComponent
@@ -421,13 +422,13 @@ Private Function getThisModule() As VBIDE.VBComponent
             'We do nothing
         Else
             Dim secondLine As String: secondLine = VBComp.CodeModule.lines(2, 1)
-            If InStr(secondLine, IOEXP_UNIQUE_STRING) > 0 And VBComp.name <> IOEXP_UNIQUE_STRING Then
-                Set getThisModule = VBComp
+            If InStr(secondLine, uniqueIdentifier) > 0 And VBComp.name <> uniqueIdentifier Then
+                Set getMetaModule = VBComp
                 Exit Function
             End If
         End If
     Next VBComp
-    Call MsgBox("This module not found. Searched for module with second line equal to " & IOEXP_UNIQUE_STRING, vbExclamation)
+    Call MsgBox("This module not found. Searched for module with second line equal to " & uniqueIdentifier, vbExclamation)
 End Function
 
 Private Sub testIsWhiteListed()
