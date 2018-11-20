@@ -34,9 +34,21 @@ End Sub
 'Calls the procedure specified by procName from the procedure targetProcName in the WB module
 Private Sub maybeAddCallToWbProc(ByVal procName As String, ByVal targetProcName As String)
     Dim wbModule As VBIDE.CodeModule: Set wbModule = getThisWorkbookModule
-    Dim lineNum As Integer
-    lineNum = wbModule.ProcBodyLine(targetProcName, vbext_pk_Proc)
-    MsgBox (targetProcName & " is on line " & lineNum)
+    Dim startLineNum As Long, currLineNum As Long, countLines As Long
+    startLineNum = wbModule.ProcBodyLine(targetProcName, vbext_pk_Proc)
+    countLines = wbModule.ProcCountLines(targetProcName, vbext_pk_Proc)
+    Dim currLine As String
+    For currLineNum = startLineNum + 1 To startLineNum + countLines - 2
+        currLine = wbModule.lines(currLineNum, 1)
+        'If the procedure is mentioned at all on any line, be conservative and don't add it
+        If InStr(currLine, procName) <> 0 Then
+            Debug.Print "Did not add a call to " & procName & ". Found an existing call on line " & _
+                currLineNum & ": " & currLine
+            Exit Sub
+        End If
+    Next
+    Call wbModule.InsertLines(currLineNum, "    Call " & procName)
+    Debug.Print "Inserted a call to " & procName & " on line " & currLineNum
 End Sub
 
 Sub testShouldLoadToWb()
@@ -125,11 +137,14 @@ Private Sub maybeAddSubToThisWorkbook(subName As String, subParams As String, su
 End Sub
 
 Private Sub maybeAddSubToModule(oCodeMod As VBIDE.CodeModule, subName As String, subParams As String, subCode As String)
+    Dim stringToAdd As String: stringToAdd = "Private Sub " & subName & "(" & subParams & ")"
+    If subCode <> "" Then _
+        stringToAdd = stringToAdd & vbCrLf
+    stringToAdd = stringToAdd & subCode & vbCrLf & "End Sub" & vbCrLf
     If Not doesSubExist(subName, oCodeMod) Then
-        oCodeMod.AddFromString "Private Sub " & subName & "(" & subParams & ")" _
-        & vbCrLf & subCode & vbCrLf & "End Sub" & vbCrLf
+        oCodeMod.AddFromString stringToAdd
     Else
-        Debug.Print "Sub " & subName & "already exists. Didn't add anything."
+        Debug.Print "Sub " & subName & "already exists. Didn't add this sub to WB."
     End If
 End Sub
 
