@@ -613,7 +613,7 @@ Private Function miscRawWhiteList() As String
 End Function
 
 Private Sub testSpecificWhiteList()
-    Call MsgBox("Specific white list: " & vbCrLf & Join(specificWhiteList(), vbCrLf))
+    Call MsgBox("Specific white list: " & vbCrLf & Join(specificWhiteList(), ","))
 End Sub
 
 Private Function specificWhiteList() As String()
@@ -621,7 +621,7 @@ Private Function specificWhiteList() As String()
     Dim specTs As textStream: Set specTs = getSpecificWhitelistInputStream(fso)
     If specTs.AtEndOfStream Then
         'Return an empty array here
-        Dim arrayToReturn() As String
+        Dim arrayToReturn(0) As String
         specificWhiteList = arrayToReturn
         Exit Function
     End If
