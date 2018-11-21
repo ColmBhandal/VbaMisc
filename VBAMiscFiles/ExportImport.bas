@@ -288,10 +288,6 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
                 szFileName = szFileName & ".frm"
             Case vbext_ct_StdModule
                 szFileName = szFileName & ".bas"
-            Case vbext_ct_Document
-                ''' This is a worksheet or workbook object.
-                ''' Don't try to export.
-                bExport = False
         End Select
         
         If bExport Then
@@ -482,10 +478,7 @@ Sub DeleteVBAModulesAndUserForms(whiteList() As String)
     Set VBProj = ActiveWorkbook.VBProject
     
     For Each VBComp In VBProj.VBComponents
-        If VBComp.Type = vbext_ct_Document Then
-            'Thisworkbook or worksheet module
-            'We do nothing
-        ElseIf isWhiteListed(VBComp.name, whiteList) Then
+        If isWhiteListed(VBComp.name, whiteList) Then
             VBProj.VBComponents.Remove VBComp
         'We need to delete special meta modules
         ElseIf (VBComp.name = EXPIMP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
@@ -526,15 +519,10 @@ Private Function getMetaModule(uniqueIdentifier As String) As VBIDE.VBComponent
     
     'Loop through all modules until you find the one whose second line contains this unique string
     For Each VBComp In VBProj.VBComponents
-        If VBComp.Type = vbext_ct_Document Then
-            'Thisworkbook or worksheet module
-            'We do nothing
-        Else
-            Dim secondLine As String: secondLine = VBComp.CodeModule.lines(2, 1)
-            If InStr(secondLine, uniqueIdentifier) > 0 And VBComp.name <> uniqueIdentifier Then
-                Set getMetaModule = VBComp
-                Exit Function
-            End If
+        Dim secondLine As String: secondLine = VBComp.CodeModule.lines(2, 1)
+        If InStr(secondLine, uniqueIdentifier) > 0 And VBComp.name <> uniqueIdentifier Then
+            Set getMetaModule = VBComp
+            Exit Function
         End If
     Next VBComp
     Call MsgBox("This module not found. Searched for module with second line equal to " & uniqueIdentifier, vbExclamation)
