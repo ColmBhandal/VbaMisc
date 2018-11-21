@@ -284,8 +284,17 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
         bExport = True
         szFileName = cmpComponent.name
 
-        If (Not isWhiteListed(szFileName, whiteList)) Then _
+        If (Not isWhiteListed(szFileName, whiteList)) Then
             bExport = False
+        ElseIf (importImpossible(cmpComponent)) Then
+            Dim msgTrap As VbMsgBoxResult
+            msgTrap = MsgBox("The module " & szFileName & " will be impossible to import." _
+            & vbCrLf & "Would you like to export it anyway?", vbYesNo)
+            Select Case msgTrap
+                Case vbNo
+                    bExport = False
+            End Select
+        End If
 
         ''' Concatenate the correct filename for export.
         Select Case cmpComponent.Type
@@ -297,17 +306,27 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
                 szFileName = szFileName & ".bas"
         End Select
         
+        
+        
         If bExport Then
             ''' Export the component to a text file.
             cmpComponent.Export szExportPath & szFileName
             Debug.Print "Exported " & szFileName
-        
         End If
    
     Next cmpComponent
     
     Debug.Print "**" & Now & "** " & "Completed export to: " & exportFolder
 End Sub
+
+Function importImpossible(cmpComponent As VBIDE.VBComponent) As Boolean
+    Select Case cmpComponent.Type
+        Case vbext_ct_Document
+            importImpossible = True
+        Case Else
+            importImpossible = False
+    End Select
+End Function
 
 Public Sub ImportModulesWarn()
     Dim answer As Integer
@@ -399,6 +418,15 @@ Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
     Debug.Print "**" & Now & "** " & "Completed import from: " & importFolder
 End Sub
+
+Function exportIllAdvised(cmpComponent As VBIDE.VBComponent) As Boolean
+    Select Case cmpComponent.Type
+        Case vbext_ct_Document
+            exportIllAdvised = True
+        Case Else
+            exportIllAdvised = False
+    End Select
+End Function
 
 Sub testCreateFolderWithVBAFiles()
     MsgBox (createFolderWithVBAMiscFiles())
@@ -492,7 +520,9 @@ Sub DeleteVBAModulesAndUserForms(whiteList() As String)
     
     For Each VBComp In VBProj.VBComponents
         Dim name As String: name = VBComp.name
-        If isWhiteListed(name, whiteList) Then
+        If importImpossible(VBComp) Then
+            'Do nothing - we don't delete things that can't be imported
+        ElseIf isWhiteListed(name, whiteList) Then
             VBProj.VBComponents.Remove VBComp
             Debug.Print "Removed module " & name
         'We need to delete special meta modules
