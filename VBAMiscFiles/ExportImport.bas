@@ -402,17 +402,20 @@ Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     ''' Import whitelisted code modules in the specified path
     ''' to the ActiveWorkbook.
     For Each objFile In objFSO.GetFolder(szImportPath).Files
-        If (objFSO.GetExtensionName(objFile.name) = "cls") Or _
-            (objFSO.GetExtensionName(objFile.name) = "frm") Or _
-            (objFSO.GetExtensionName(objFile.name) = "bas") Then
+        Dim objFileName As String: objFileName = objFile.name
+        If (objFSO.GetExtensionName(objFileName) = "cls") Or _
+            (objFSO.GetExtensionName(objFileName) = "frm") Or _
+            (objFSO.GetExtensionName(objFileName) = "bas") Then
                 Dim moduleName As String
-                moduleName = Split(objFile.name, ".")(0)
+                moduleName = Split(objFileName, ".")(0)
                 If isWhiteListed(moduleName, whiteList) Then
                     cmpComponents.Import objFile.path
-                    Debug.Print "Imported " & objFile.name
+                    Debug.Print "Imported " & objFileName
                 Else
                     Debug.Print moduleName & " not on white list. Skipped import"
                 End If
+        Else
+            Debug.Print "Unrecognised extension. Skipped import for file: " & objFileName
         End If
     Next
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
