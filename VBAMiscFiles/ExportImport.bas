@@ -478,11 +478,14 @@ Sub DeleteVBAModulesAndUserForms(whiteList() As String)
     Set VBProj = ActiveWorkbook.VBProject
     
     For Each VBComp In VBProj.VBComponents
-        If isWhiteListed(VBComp.name, whiteList) Then
+        Dim name As String: name = VBComp.name
+        If isWhiteListed(name, whiteList) Then
             VBProj.VBComponents.Remove VBComp
+            Debug.Print "Removed module " & name
         'We need to delete special meta modules
-        ElseIf (VBComp.name = EXPIMP_UNIQUE_STRING) Or (VBComp.name = EH_UNIQUE_STRING) Then
+        ElseIf (name = EXPIMP_UNIQUE_STRING) Or (name = EH_UNIQUE_STRING) Then
             VBProj.VBComponents.Remove VBComp
+            Debug.Print "Removed special temp module " & name
         End If
     Next VBComp
 End Sub
