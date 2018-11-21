@@ -268,7 +268,7 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
         Dim whiteListedModule As Variant
         For Each whiteListedModule In whiteList()
             Kill szExportPath & whiteListedModule & ".*"
-            Debug.Print "Deleted module: " & whiteListedModule
+            Debug.Print "Deleted file for module: " & whiteListedModule
         Next
     On Error GoTo 0
     
