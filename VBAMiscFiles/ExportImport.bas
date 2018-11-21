@@ -289,7 +289,7 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
         ElseIf (importImpossible(cmpComponent)) Then
             Dim msgTrap As VbMsgBoxResult
             msgTrap = MsgBox("The module " & szFileName & " will be impossible to import." _
-            & vbCrLf & "Would you like to export it anyway?", vbYesNo)
+            & vbCrLf & "Would you like to export it anyway without a file extension?", vbYesNo)
             Select Case msgTrap
                 Case vbNo
                     bExport = False
@@ -418,15 +418,6 @@ Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     Call selectMetaModule(EXPIMP_UNIQUE_STRING)
     Debug.Print "**" & Now & "** " & "Completed import from: " & importFolder
 End Sub
-
-Function exportIllAdvised(cmpComponent As VBIDE.VBComponent) As Boolean
-    Select Case cmpComponent.Type
-        Case vbext_ct_Document
-            exportIllAdvised = True
-        Case Else
-            exportIllAdvised = False
-    End Select
-End Function
 
 Sub testCreateFolderWithVBAFiles()
     MsgBox (createFolderWithVBAMiscFiles())
