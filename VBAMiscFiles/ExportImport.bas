@@ -7,6 +7,7 @@ Const EXPIMP_UNIQUE_STRING = "zn8AiLJcRXREAfOSpY"
 Const EH_PREFIX = "EH_"
 Private Const WB_PREFIX = "Workbook_"
 Private Const CONFIG_FILE_NAME = "VbaMisc.config"
+Private Const SPECIFIC_WHITELIST_FILE_NAME = "specificWhiteList.config"
 Private Const MISC_REL_KEY = "miscRel: "
 Private Const MISC_ABS_KEY = "miscAbs: "
 Private Const SPECIFIC_REL_KEY = "specificRel: "
@@ -460,36 +461,18 @@ Function getFolderWithVbaFiles(fso As FileSystemObject, relKey As String, absKey
     getFolderWithVbaFiles = ""
 End Function
 
-Sub testGetConfigInputStream()
-    MsgBox (getConfigInputStream(New FileSystemObject).AtEndOfLine)
+Sub testGetInputStream()
+    MsgBox ("Config file empty: " & getConfigInputStream(New FileSystemObject).AtEndOfStream)
+    MsgBox ("Whitelist file empty: " & getSpecificWhitelistInputStream(New FileSystemObject).AtEndOfStream)
 End Sub
 
 Function getConfigInputStream(fso As FileSystemObject) As textStream
     Dim fullPath As String: fullPath = getConfigFileFullPath()
-    On Error GoTo config_textStream_Error
-    Set getConfigInputStream = fso.OpenTextFile(fullPath)
-    On Error GoTo 0
-    Exit Function
-config_textStream_Error:
-    Dim errorDesc As String: errorDesc = "Failed to connect text stream to file: " & fullPath
-    Err.Raise Number:=513, Description:=errorDesc
+    Set getConfigInputStream = getInputStream(fso, fullPath)
 End Function
 
 Function getConfigFileFullPath() As String
     getConfigFileFullPath = getWorkingDirPath() & CONFIG_FILE_NAME
-End Function
-
-Sub testGetWorkingDirPath()
-    MsgBox (getWorkingDirPath())
-End Sub
-
-Function getWorkingDirPath()
-    Dim prefixPath As String
-    prefixPath = ActiveWorkbook.path
-    If Right(prefixPath, 1) <> "\" Then
-        prefixPath = prefixPath & "\"
-    End If
-    getWorkingDirPath = prefixPath
 End Function
 
 Sub DeleteVBAModulesAndUserForms(whiteList() As String)
@@ -596,9 +579,61 @@ Private Function miscWhiteList() As String()
     miscWhiteList = Split(miscRawWhiteList(), ",")
 End Function
 
-'Only modules on this list will get imported/exported
-'Add your modules to the whiteList variable, separated by commas
 Private Function miscRawWhiteList() As String
     miscRawWhiteList = "Dependencies,DependencyIndexing,DependencyIndexRun,ExportImport,FormulaChecking,GeneralPurpose" _
     & ",EventHandler"
+End Function
+
+Private Sub testSpecificWhiteList()
+    Dim elem As Variant
+    Dim all As String: all = ""
+    For Each elem In specificWhiteList()
+        all = all & vbCrLf & elem
+    Next
+    MsgBox ("Specific white list: " & all)
+End Sub
+
+Private Function specificWhiteList() As String()
+    Dim fso As New FileSystemObject
+    Dim specTs As textStream: Set specTs = getSpecificWhitelistInputStream(fso)
+    If specTs.AtEndOfStream Then
+        'Return an empty array here
+        Dim arrayToReturn() As String
+        specificWhiteList = arrayToReturn
+        Exit Function
+    End If
+    specificWhiteList = Split(specTs.ReadAll, vbNewLine)
+End Function
+
+Function getSpecificWhitelistInputStream(fso As FileSystemObject) As textStream
+    Dim fullPath As String: fullPath = getSpecificWhitelistFileFullPath()
+    Set getSpecificWhitelistInputStream = getInputStream(fso, fullPath)
+End Function
+
+Private Function getSpecificWhitelistFileFullPath() As String
+    getSpecificWhitelistFileFullPath = getWorkingDirPath() & SPECIFIC_WHITELIST_FILE_NAME
+End Function
+
+Function getInputStream(fso As FileSystemObject, fullPath As String) As textStream
+    On Error GoTo config_textStream_Error
+    Set getInputStream = fso.OpenTextFile(fullPath)
+    On Error GoTo 0
+    Exit Function
+config_textStream_Error:
+    Dim errorDesc As String: errorDesc = "Failed to connect text stream to file: " & fullPath
+    Err.Raise Number:=513, Description:=errorDesc
+End Function
+
+
+Sub testGetWorkingDirPath()
+    MsgBox (getWorkingDirPath())
+End Sub
+
+Function getWorkingDirPath()
+    Dim prefixPath As String
+    prefixPath = ActiveWorkbook.path
+    If Right(prefixPath, 1) <> "\" Then
+        prefixPath = prefixPath & "\"
+    End If
+    getWorkingDirPath = prefixPath
 End Function
