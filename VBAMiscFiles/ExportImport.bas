@@ -223,7 +223,14 @@ End Function
 Public Sub ExportModules()
     Debug.Print "----" & Now & "---- " & "Exports starting"
     ExportMiscModules
+    ExportProjectSpecificModules
     Debug.Print "----" & Now & "---- " & "All exports complete"
+End Sub
+
+Private Sub ExportProjectSpecificModules()
+    Dim exportFolder As String: exportFolder = createFolderWithProjectSpecificVBAFiles
+    Dim whiteList() As String: whiteList = specificWhiteList()
+    Call ExportModulesTargeted(exportFolder, whiteList)
 End Sub
 
 Private Sub ExportMiscModules()
@@ -304,8 +311,9 @@ End Sub
 
 Public Sub ImportModulesWarn()
     Dim answer As Integer
-    answer = MsgBox("Import will overwrite the following modules with data from disk: " & _
-    vbCrLf & miscRawWhiteList() & vbCrLf & "Are you sure you want to proceed?", _
+    answer = MsgBox("Are you sure you want to proceed?" & vbCrLf & _
+    "Import will overwrite the following modules with data from disk: " & _
+    vbCrLf & Join(specificWhiteList(), ",") & vbCrLf & Join(miscWhiteList(), ",") & vbCrLf, _
     vbYesNo + vbQuestion, "Import and Override?")
     If answer = vbNo Then
         Debug.Print "!!!!!!! No Import done. User cancelled."
@@ -316,8 +324,13 @@ End Sub
 
 Public Sub ImportModules()
     Debug.Print "----" & Now & "---- " & "Imports starting"
+    Call ImportProjectSpecificModules
     Call ImportMiscModules
     Debug.Print "----" & Now & "---- " & "All Imports complete"
+End Sub
+
+Public Sub ImportProjectSpecificModules()
+    Call ImportModulesTargeted(createFolderWithProjectSpecificVBAFiles, specificWhiteList)
 End Sub
 
 Public Sub ImportMiscModules()
@@ -335,7 +348,7 @@ Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
 
     'Get the path to the folder with modules
     If importFolder = "Error" Then
-        MsgBox "Problem with import/export folder. Quitting."
+        MsgBox "Problem with import folder. Quitting."
         Exit Sub
     End If
 
@@ -387,7 +400,7 @@ Public Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     Debug.Print "**" & Now & "** " & "Completed import from: " & importFolder
 End Sub
 
-Sub testCreateFolderWithVBAMiscFiles()
+Sub testCreateFolderWithVBAFiles()
     MsgBox (createFolderWithVBAMiscFiles())
     MsgBox (createFolderWithProjectSpecificVBAFiles())
 End Sub
@@ -576,12 +589,7 @@ Private Function miscRawWhiteList() As String
 End Function
 
 Private Sub testSpecificWhiteList()
-    Dim elem As Variant
-    Dim all As String: all = ""
-    For Each elem In specificWhiteList()
-        all = all & vbCrLf & elem
-    Next
-    MsgBox ("Specific white list: " & all)
+    Call MsgBox("Specific white list: " & vbCrLf & Join(specificWhiteList(), vbCrLf))
 End Sub
 
 Private Function specificWhiteList() As String()
