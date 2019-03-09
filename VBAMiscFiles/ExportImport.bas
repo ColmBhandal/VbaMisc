@@ -618,14 +618,21 @@ End Sub
 
 Private Function specificWhiteList() As String()
     Dim fso As New FileSystemObject
-    Dim specTs As textStream: Set specTs = getSpecificWhitelistInputStream(fso)
-    If specTs.AtEndOfStream Then
-        'Return an empty array here
-        Dim arrayToReturn(0) As String
-        specificWhiteList = arrayToReturn
-        Exit Function
-    End If
-    specificWhiteList = Split(specTs.ReadAll, vbNewLine)
+    On error goto gtNoWhiteListDefined
+		Dim specTs As textStream: Set specTs = getSpecificWhitelistInputStream(fso)
+		If specTs.AtEndOfStream Then
+			'Return an empty array here
+			Dim arrayToReturn(0) As String
+			specificWhiteList = arrayToReturn
+			Exit Function
+		End If
+		specificWhiteList = Split(specTs.ReadAll, vbNewLine)
+	On error goto 0
+	Exit Function
+gtNoWhiteListDefined:
+	'Creating a 0 length array if there's no file
+	Dim arrZ(-1) As String
+	specificWhiteList = arrZ
 End Function
 
 Function getSpecificWhitelistInputStream(fso As FileSystemObject) As textStream
