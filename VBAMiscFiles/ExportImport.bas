@@ -631,8 +631,7 @@ Private Function specificWhiteList() As String()
 	Exit Function
 gtNoWhiteListDefined:
 	'Creating a 0 length array if there's no file
-	Dim arrZ(-1) As String
-	specificWhiteList = arrZ
+	specificWhiteList = Split(vbNullString)
 End Function
 
 Function getSpecificWhitelistInputStream(fso As FileSystemObject) As textStream
